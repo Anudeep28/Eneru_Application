@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load tailwind_filters %}
+
+{% block title %}
+    ClientRestrict
+{% endblock title %}
+
+{% block content %}
+    <div class="max-w-lg mx-auto">
+        
+        <div class="py-5 border-b border-gray-200">
+            <a class="hover:text-blue-500" href="{% url 'landing-page' %}">Go Back</a>
+        </div>
+        <h1 class="mt-5 text-4xl text-gray-800" > You are not Authorised or Subscribed for Chitfund App!! </h1>
+    </div>
+{% endblock content %}

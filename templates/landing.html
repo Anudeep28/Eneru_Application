@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    Eneru-Landing-Page
+{% endblock title %}
+
+{% block content %}
+<section class="text-gray-600 body-font">
+    <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
+      <img class="lg:w-2/6 md:w-3/6 w-5/6 mb-10 object-cover object-center rounded" alt="hero" src="{% static 'images/eneru_logo.jpg' %}">
+      <div class="text-center lg:w-2/3 w-full">
+        <h1 class="title-font sm:text-4xl text-3xl mb-4 font-medium text-gray-900">Welcome to Eneru Technology
+
+        </h1>
+        <p class="mb-8 leading-relaxed">
+            You find your Apps here as per your requirements.
+        </p>
+        
+        <div class="flex justify-center">
+        <a href="{% url 'namegen:NameGenerator' %}">
+          <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Name Generator</button>
+        </a>
+        <a href="{% url 'client:client-list' %}">
+            <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Chitfund
+            </button>
+        </a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock content %}
+
