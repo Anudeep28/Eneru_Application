@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}
+    ClientAssign
+{% endblock title %}
+
+{% block content %}
+    <a href="{% url 'client:client-list' %}">Home</a>
+    <hr/>
+    <h1> Assign an Chitfund to this client </h1>
+    <form method="POST">
+        {% csrf_token %} <!--Security aspect of Django -->
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+{% endblock content %}
