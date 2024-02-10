@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser#get_user_model
 #User = get_user_model()
 # post save is executed whenn the a save function is executed
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 
 """
     .objects is caloling the model manager
@@ -23,7 +23,7 @@ from django.db.models.signals import post_save, pre_save
 
 # Creating my custom user model
 class User(AbstractUser):
-    is_chitfund_owner = models.BooleanField(default=True)
+    is_chitfund_owner = models.BooleanField(default=False)
     is_chitfund_user = models.BooleanField(default=False)
     is_namegen_user = models.BooleanField(default=False)
 
@@ -144,7 +144,8 @@ class Client(models.Model):
     # Relationship field connection betn tables
     # how to handle when the related instance is delete to handle
     # models.CASCADE will delete the client when chitfund is deleted
-    chitfundName = models.ForeignKey("chitFund", 
+    chitfundName = models.ForeignKey("chitFund",
+                                     related_name="users", 
                                      on_delete=models.SET_NULL,
                                      blank=True,
                                      null=True)
