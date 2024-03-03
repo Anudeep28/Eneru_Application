@@ -27,9 +27,9 @@ clienCategorytList
             </tr>
             {% for category in category_list %}
             <tr>
-                
+
                 <td class="px-4 py-3">
-                  <a href="{% url 'client:client-category-detail' category.id %}">{{ category.name }}</a>
+                  <a href="{% url 'client:client-category-detail' category.pk %}">{{ category.name }}</a>
                 </td>
                 <td class="px-4 py-3">Todo Count</td>
             </tr>

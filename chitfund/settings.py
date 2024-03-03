@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Take environment variables from .env file
 READ_DOT_ENV_FILE = env.bool('READ_DOT_ENV_FILE', default=False)
 if READ_DOT_ENV_FILE:
-    environ.Env.read_env() 
+    environ.Env.read_env()
 
 # False if not in os.environ because of casting above
 DEBUG = env('DEBUG')
@@ -47,7 +47,7 @@ SECRET_KEY = env('SECRET_KEY')
 # # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = []
+#ALLOWED_HOSTS = ['www.eneru.co.in']
 
 
 # Application definition
@@ -134,6 +134,9 @@ DATABASES = {
         'USER': env("DB_USER"),#'<your_username>',
         'PASSWORD': env("DB_PASSWORD"),#'<your_mysql_password>',
         'HOST': env("DB_HOST"),#'<your_mysql_hostname>',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            }
     }
 }
 
@@ -162,7 +165,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -173,10 +176,10 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 
-#### White noise package for static config in 
+#### White noise package for static config in
 # production envirnment
 #STATIC_URL = 'static/'
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 MEDIA_URL = '/images/'
 
 STATICFILES_DIRS = [
@@ -188,7 +191,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # For user uploaded content
 MEDIA_ROOT = BASE_DIR / 'static/images'
 
-STATIC_ROOT = "static_root"
+STATIC_ROOT = BASE_DIR / "static_root"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -213,8 +216,8 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
 # whe the user loggs in he is redirected to this url below
 #LOGIN_REDIRECT_URL = "/client"
-"""This is updated when you use the login and logout 
-    of the auth user from django package where we need to provide the redirecting url    
+"""This is updated when you use the login and logout
+    of the auth user from django package where we need to provide the redirecting url
 """
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
@@ -222,7 +225,7 @@ LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = '/login'
 
 
-# You can set your default template pack for your project 
+# You can set your default template pack for your project
 # using the CRISPY_TEMPLATE_PACK Django settings variable:
 CRISPY_TEMPLATE_PACK = 'tailwind'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
@@ -241,7 +244,7 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = "DENY"
 
-    ALLOWED_HOSTS = ["*"] # THIS NEEDS TO BE CHNAGED WHEN DOMAIN IS KNOWN
+    ALLOWED_HOSTS = ['www.eneru.co.in'] # THIS NEEDS TO BE CHNAGED WHEN DOMAIN IS KNOWN
     EMAIL_BACKEND = env('EMAIL_BACKEND')
     EMAIL_HOST = env('EMAIL_HOST')
     EMAIL_USE_TLS = env('EMAIL_USE_TLS')

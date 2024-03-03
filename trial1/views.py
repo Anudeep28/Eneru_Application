@@ -20,7 +20,7 @@ def NameGenerator(request):
     user = request.user
     if not user.is_authenticated or not user.is_namegen_user:
         return HttpResponse("""<h1>You have not subscribed for NameGen!!</h1>""")
-    
+
     if request.method == 'GET':
         name_list = []
         #registered_option = appoptions.objects.get(owner = request.user)
@@ -31,7 +31,8 @@ def NameGenerator(request):
 
             # get the number input by user
             number = int(request.POST.get('number'))
-            name_list = llm.gen_name(num=number)
+            letter = request.POST.get('letter')
+            name_list = llm.gen_name2(num=number,letter=letter)
 
             #print(name_list)
             return render(request, template_name='trial1/NameGenerator.html',context={'name_list':name_list})

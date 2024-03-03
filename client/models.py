@@ -6,7 +6,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser#get_user_model
 #User = get_user_model()
 # post save is executed whenn the a save function is executed
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 
 """
     .objects is caloling the model manager
@@ -23,22 +23,22 @@ from django.db.models.signals import post_save, pre_save
 
 # Creating my custom user model
 class User(AbstractUser):
-    is_chitfund_owner = models.BooleanField(default=True)
+    is_chitfund_owner = models.BooleanField(default=False)
     is_chitfund_user = models.BooleanField(default=False)
     is_namegen_user = models.BooleanField(default=False)
 
-    
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         return self.user.username
-    
+
 
 
 # chitfund model
 class ChitFund(models.Model):
-    # below commented field is already there 
+    # below commented field is already there
     # in the User part hence commented
     name = models.CharField(max_length = 200)
     about = models.TextField(null=True)
@@ -46,9 +46,9 @@ class ChitFund(models.Model):
     state = models.CharField(max_length=150)
     country = models.CharField(max_length=150)
     pin = models.IntegerField(blank=True, null=True)
-    # we need to have one to one relation between 
+    # we need to have one to one relation between
     # user and the agent which is the user itself
-    
+
     #### Have to think on below line ############################################
     #user = models.OneToOneField(User, on_delete=models.CASCADE)
     #############################################################################
@@ -57,8 +57,8 @@ class ChitFund(models.Model):
     #updated = models.DateTimeField(auto_now=True)
     # auto_now_add takes a snapshot of when it was first added the instance
     #created = models.DateTimeField(auto_now_add=True)
-    
-    owner = models.ForeignKey(UserProfile, 
+
+    owner = models.ForeignKey(UserProfile,
                               on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):
@@ -93,7 +93,7 @@ class Client(models.Model):
     OTHERS=5
     UNKNOWN=6
 
-    EDU =( 
+    EDU =(
         (POSTGRADUATE,"Postgraduate"),
         (GRADUATE,"Graduate"),
         (HIGHSCHOOL,"Highschool"),
@@ -107,9 +107,9 @@ class Client(models.Model):
         ('YT','Youtube'),
         ('Google','Google'),
         ('Linkedin','Linkedin')
-        
+
     )
-    
+
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     age = models.IntegerField(default=18)
@@ -130,7 +130,7 @@ class Client(models.Model):
     )
 
     phoned = models.BooleanField(default=False)
-    phone_number = models.CharField(max_length=13) 
+    phone_number = models.CharField(max_length=13)
     email = models.EmailField()
     company = models.CharField(max_length=150,blank=True,null=True)
     description = models.TextField()
@@ -144,19 +144,19 @@ class Client(models.Model):
     # Relationship field connection betn tables
     # how to handle when the related instance is delete to handle
     # models.CASCADE will delete the client when chitfund is deleted
-    chitfundName = models.ForeignKey("chitFund", 
+    chitfundName = models.ForeignKey("chitFund",
                                      on_delete=models.SET_NULL,
                                      blank=True,
                                      null=True)
-    
-    owner = models.ForeignKey(UserProfile, 
-                              on_delete=models.SET_NULL, blank=True, null=True)
-    
 
-    category = models.ForeignKey("category", 
-                                 related_name="clients", 
-                                 on_delete=models.SET_NULL, 
-                                 blank=True, 
+    owner = models.ForeignKey(UserProfile,
+                              on_delete=models.SET_NULL, blank=True, null=True)
+
+
+    category = models.ForeignKey("category",
+                                 related_name="clients",
+                                 on_delete=models.SET_NULL,
+                                 blank=True,
                                  null=True)
     # auto_now it will automatically store the updated value int his field
     #updated = models.DateTimeField(auto_now=True)
@@ -170,7 +170,7 @@ class Client(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=30) # New, Processing, Opened, Ongoing, Defaulted, Completed
-    owner = models.ForeignKey(UserProfile, 
+    owner = models.ForeignKey(UserProfile,
                               on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self):

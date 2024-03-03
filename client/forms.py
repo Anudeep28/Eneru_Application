@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import ModelForm
 from .models import Client, User, ChitFund
-from django.contrib.auth.forms import UserCreationForm, UsernameField
+from django.contrib.auth.forms import UserCreationForm
 
 # class ClientForm(forms.Form):
 #     first_name = forms.CharField()
@@ -15,7 +15,6 @@ class ClientForm(ModelForm):
 
         fields = '__all__'
 
-        exclude = ['category']
 
 class ChitfundUserForm(UserCreationForm):
     class Meta:
@@ -23,10 +22,10 @@ class ChitfundUserForm(UserCreationForm):
         fields = ['username','email','password1','password2','is_namegen_user']
         # we can also do it in this way
         # fields = ("username",)
-        # field_classes = {"username" : UsernamField} 
+        # field_classes = {"username" : UsernamField}
 
 class clientAssignForm(forms.Form):
-    # Django provides us with Model choice instaead which takes in the 
+    # Django provides us with Model choice instaead which takes in the
     # queryset from the models
     chitfund = forms.ModelChoiceField(queryset=ChitFund.objects.none())
 
@@ -39,7 +38,13 @@ class clientAssignForm(forms.Form):
         self.fields["chitfund"].queryset = chitfunds
 
 class clientCategoryUpdateForm(ModelForm):
-    
+
     class Meta:
         model = Client
         fields = ['category']
+
+
+class LoginUserForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username','password']
