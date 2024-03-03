@@ -22,6 +22,14 @@
         {% else %}
             <input type="number" id="inputUsername" class="form-control" placeholder="Number" name="number">
         {% endif %}
+        <label for="inputLetter" class="sr-only">
+            Provide the Number
+        </label>
+        {% if not name_list %}
+            <input type="text" id="inputLetter" class="form-control" placeholder="Starting Letter" name="letter" required autofocus>
+        {% else %}
+            <input type="text" id="inputLetter" class="form-control" placeholder="Starting Letter" name="letter">
+        {% endif %}
         <br>
         <button class="btn btn-lg btn-primary btn-block" name = "submit" type="submit" value="Submit">Submit</button>
         <br>

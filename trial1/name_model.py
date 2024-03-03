@@ -303,11 +303,41 @@ class nameGen:
 
         return train_dataset, test_dataset
 
-    def gen_name(self, num):
+    # def gen_name(self, num):
+    #     top_k = -1
+    #     top_k = top_k if top_k != -1 else None
+    #     steps = self.train_dataset.get_output_length() - 1
+    #     X_init = torch.zeros(num, 1, dtype=torch.long).to(self.device)
+    #     X_samp = generate(self.model, X_init, steps, top_k=top_k, do_sample=True).to(self.device)
+    #     train_samples, test_samples, new_samples = [], [], []
+    #     for i in range(X_samp.size(0)):
+    #         # get the i'th row of sampled integers, as python list
+    #         row = X_samp[i, 1:].tolist()  # note: we need to crop out the first <START> token
+    #         # token 0 is the <STOP> token, so we crop the output sequence at that point
+    #         crop_index = row.index(0) if 0 in row else len(row)
+    #         row = row[:crop_index]
+    #         word_samp = self.train_dataset.decode(row)
+    #         # separately track samples that we have and have not seen before
+    #         if self.train_dataset.contains(word_samp):
+    #             train_samples.append(word_samp)
+    #         elif self.test_dataset.contains(word_samp):
+    #             test_samples.append(word_samp)
+    #         else:
+    #             new_samples.append(word_samp)
+    #     return new_samples
+
+
+    def gen_name2(self, num, letter='A'):
         top_k = -1
-        top_k = top_k if top_k != -1 else None
-        steps = self.train_dataset.get_output_length() - 1
-        X_init = torch.zeros(num, 1, dtype=torch.long).to(self.device)
+        top_k = top_k if top_k != -1 else None # here top_k is None
+        steps = self.train_dataset.get_output_length() - 1 # removing start tag in the steps
+        X_init1 = torch.tensor([[self.train_dataset.stoi[letter]]]*num, dtype=torch.long).to(self.device)
+        #print(self.train_dataset.stoi[letter])
+        #X_init_u = X_init1.new_full((num, 1), )
+        #print("new: ",X_init1)
+        X_init_z = torch.zeros(num, 1, dtype=torch.long).to(self.device) # tensor of dim num,1
+        X_init = torch.cat((X_init_z, X_init1),dim=1)
+        #print("old: ",X_init)
         X_samp = generate(self.model, X_init, steps, top_k=top_k, do_sample=True).to(self.device)
         train_samples, test_samples, new_samples = [], [], []
         for i in range(X_samp.size(0)):
