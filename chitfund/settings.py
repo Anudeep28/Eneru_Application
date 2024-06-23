@@ -115,20 +115,9 @@ WSGI_APPLICATION = 'chitfund.wsgi.application'
 # }
 
 # for postgresql functionality
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': env("DB_NAME"),#'chitfund',
-#         'USER': env("DB_USER"),#'postgres',
-#         'PASSWORD': env("DB_PASSWORD"),#'Onepiece@28',
-#         'HOST': env("DB_HOST"),#'localhost',
-#         'PORT': env("DB_PORT"),#'5432',
-#     }
-# }
-
-# For Mysql connection
 DATABASES = {
     'default': {
+<<<<<<< HEAD
         'ENGINE': 'django.db.backends.mysql',
         'NAME': env("DB_USER")+"$"+env("DB_NAME"),#'<your_username>$<your_database_name>',
         'USER': env("DB_USER"),#'<your_username>',
@@ -137,9 +126,16 @@ DATABASES = {
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             }
+=======
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': env("DB_NAME"),#'chitfund',
+        'USER': env("DB_USER"),#'postgres',
+        'PASSWORD': env("DB_PASSWORD"),#'Onepiece@28',
+        'HOST': env("DB_HOST"),#'localhost',
+        'PORT': env("DB_PORT"),#'5432',
+>>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

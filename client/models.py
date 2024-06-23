@@ -145,6 +145,10 @@ class Client(models.Model):
     # how to handle when the related instance is delete to handle
     # models.CASCADE will delete the client when chitfund is deleted
     chitfundName = models.ForeignKey("chitFund",
+<<<<<<< HEAD
+=======
+                                     related_name="users", 
+>>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
                                      on_delete=models.SET_NULL,
                                      blank=True,
                                      null=True)

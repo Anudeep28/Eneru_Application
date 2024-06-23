@@ -3,6 +3,7 @@ from django.forms import ModelForm
 from .models import Client, User, ChitFund
 from django.contrib.auth.forms import UserCreationForm
 
+
 # class ClientForm(forms.Form):
 #     first_name = forms.CharField()
 #     last_name = forms.CharField()
@@ -15,11 +16,14 @@ class ClientForm(ModelForm):
 
         fields = '__all__'
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
 class ChitfundUserForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username','email','password1','password2','is_namegen_user']
+        fields = ('username','email','password1','password2','is_chitfund_owner','is_chitfund_user','is_namegen_user')
         # we can also do it in this way
         # fields = ("username",)
         # field_classes = {"username" : UsernamField}
