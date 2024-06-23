@@ -39,11 +39,17 @@ class ClientListView(ClientLoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         user = self.request.user
 
-        if user.is_chitfund_owner:
+        if user.is_chitfund_owner or user.is_chitfund_user:
             queryset = Client.objects.filter(owner=user.userprofile, chitfundName__isnull=False)
+<<<<<<< HEAD
         if user.is_chitfund_user:
             queryset = Client.objects.filter(owner=user.userprofile, chitfundName__isnull=False)
             #queryset = queryset.filter(chitfundName__user= user)
+=======
+        # if self.request.user.is_chitfund_user:
+        #     queryset = Client.objects.filter(owner=user.chitfund.owner, chitfundName__isnull=False)
+        #     queryset = queryset.filter(chitfundName__user= user)
+>>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
 
         return queryset
 
@@ -108,7 +114,11 @@ class ClientCreateView(ClientLoginRequiredMixin, generic.CreateView):
     # Overwriting the method mentioned in CreateView Django to
     # send emails
     def form_valid(self, form):
+<<<<<<< HEAD
         print("user email: ",self.request.user.email," company email: ",settings.EMAIL_HOST_USER)
+=======
+        
+>>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
         # To send the email
         send_mail(subject= f"You have added {form.cleaned_data['first_name']} as a new client ",
                   message=f"""
