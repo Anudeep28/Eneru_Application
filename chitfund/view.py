@@ -2,12 +2,7 @@
 # class functions of django
 from django.views.generic import TemplateView
 from django.contrib.auth.views import LoginView
-<<<<<<< HEAD
-from client.forms import LoginUserForm
-
-=======
 from client.forms import ChitfundUserForm
->>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
 
 class landing_page(TemplateView):
     # field name which Templateview understands
@@ -16,9 +11,6 @@ class landing_page(TemplateView):
 
 
 class CustomLoginView(LoginView):
-<<<<<<< HEAD
-    form_class = LoginUserForm
-=======
+    #form_class = LoginUserForm
     template_name = 'your_app/login.html'
     form_class = ChitfundUserForm
->>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f

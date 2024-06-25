@@ -16,10 +16,6 @@ class ClientForm(ModelForm):
 
         fields = '__all__'
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 85d3363fc61e3361175fae53437af7452a1dd83f
 class ChitfundUserForm(UserCreationForm):
     class Meta:
         model = User
