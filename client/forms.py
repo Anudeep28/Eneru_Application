@@ -19,7 +19,7 @@ class ClientForm(ModelForm):
 class ChitfundUserForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ('username','email','password1','password2','is_chitfund_owner','is_chitfund_user','is_namegen_user')
+        fields = ('username','email','password1','password2','is_chitfund_owner','is_chitfund_user','is_namegen_user', 'is_chatbot_user')
         # we can also do it in this way
         # fields = ("username",)
         # field_classes = {"username" : UsernamField}
