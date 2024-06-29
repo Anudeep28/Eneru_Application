@@ -1,0 +1,131 @@
+/* body, html {
+    height: 100%;
+    margin: 0;
+  }
+  
+  .container-gemini {
+    padding: 0;
+    height: 100%;
+    width: 100%;
+  }
+  
+  .chat-store {
+    border-color: black;
+    border-style: dashed;
+  }
+
+  .chat-container {
+    background-color: rgba(221, 228, 224, 0.863);
+    max-width: 100%;
+  }
+  
+  .chat-messages {
+    padding: 1rem;
+  }
+  
+  .chat-message {
+    margin-bottom: 0.5rem;
+  }
+
+  #chat-input {
+    height: 30px;
+    width: 100%;
+    border-color: black;
+  }
+
+  .gemini-text {
+    color: rgb(241, 11, 11);
+    font-size: 3pc;
+    font: bold;
+  }
+
+  .gemini-button {
+    border-color: black;
+  }
+
+  .bot {
+    background-color: cadetblue;
+  }
+
+  .user {
+    background-color: antiquewhite;
+  } */
+
+
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .container-gemini {
+    display: flex;
+    flex-direction: column;
+    height: 80vh;
+  }
+  
+  .header-gemini {
+    background-color: #343541;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .chat-container-gemini {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    background-color: #f7f7f8;
+  }
+
+  .chat-messages-gemini {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .chat-message-gemini {
+    background-color: #fff;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    max-width: 80%;
+  }
+  
+  .chat-input-gemini {
+    display: flex;
+    padding: 10px;
+    background-color: #fff;
+  }
+  
+  .chat-input-gemini input {
+    flex-grow: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  
+  .chat-input-gemini button {
+    background-color: #10a37f;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .chat-message-gemini.user {
+    background-color: #10a37f;
+    color: #fff;
+    align-self: flex-end;
+  }
+  
+  .chat-message-gemini.bot {
+    background-color: #d3bf7d;
+    color: #343541;
+    align-self: flex-start;
+  }

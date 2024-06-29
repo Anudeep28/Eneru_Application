@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'client',
     'kuries',
     'trial1.apps.Trial1Config',
+    'chatbot',
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',
@@ -126,6 +127,7 @@ DATABASES = {
         # 'OPTIONS': {
         #     'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         #     }
+        ######## This is for development phase ############
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': env("DB_NAME"),#'chitfund',
         'USER': env("DB_USER"),#'postgres',
@@ -223,6 +225,10 @@ LOGIN_URL = '/login'
 # using the CRISPY_TEMPLATE_PACK Django settings variable:
 CRISPY_TEMPLATE_PACK = 'tailwind'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+
+
+###### Gemini API KEY
+GEMINI_API_KEY = env("GEMINI_API_KEY")
 
 
 # have to learn the below command

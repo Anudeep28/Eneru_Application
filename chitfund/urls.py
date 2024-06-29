@@ -30,9 +30,13 @@ from client.views import ClientsignupView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',landing_page.as_view(), name='landing-page'),
+    # Apps usrls
     path('client/', include('client.urls', namespace="client" )),
     path('kuries/', include('kuries.urls', namespace="kuries" )),
     path('namgen/', include('trial1.urls',namespace='namegen')),
+    path('chatbot/', include('chatbot.urls',namespace='chatbot')),
+
+    # login
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('signup/', ClientsignupView.as_view(), name='signup'),
