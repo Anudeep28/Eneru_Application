@@ -95,44 +95,57 @@ def process_with_llm(file_path):
 
 @login_required
 def upload_file(request):
+    # print(f"Request method: {request.method}")
+    # print(f"Files in request: {request.FILES}")
+    # print(f"POST data: {request.POST}")
+    
     if request.method == 'POST' and request.FILES.get('file'):
-        file = request.FILES['file']
-        
-        # Validate file extension
-        ext = os.path.splitext(file.name)[1].lower()
-        if ext not in ['.pdf', '.png', '.jpg', '.jpeg']:
-            return JsonResponse({'error': 'Invalid file format'})
+        try:
+            file = request.FILES['file']
+            # print(f'File received: {file.name}')  # Debugging statement
             
-        # Save the file
-        fs = FileSystemStorage()
-        filename = fs.save(f"documents/{file.name}", file)
-        file_path = fs.path(filename)
-        
-        # Process the file
-        if ext == '.pdf':
-            extracted_text = process_pdf(file_path)
-        else:
-            extracted_text = process_image(file_path)
+            # Validate file extension
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in ['.pdf', '.png', '.jpg', '.jpeg']:
+                return JsonResponse({'error': 'Invalid file format'})
+                
+            # Save the file
+            fs = FileSystemStorage()
+            filename = fs.save(f"documents/{file.name}", file)
+            file_path = fs.path(filename)
+            # print(f'File saved at: {file_path}')  # Debugging statement
             
-        # Process with LLM
-        markdown_output = process_with_llm(file_path)
-        
-        # Save to database
-        doc = OCRDocument.objects.create(
-            file=filename,
-            processed_text=extracted_text,
-            markdown_output=markdown_output
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'text': extracted_text,
-            'markdown': markdown_output,
-            'html': markdown.markdown(markdown_output),
-            'doc_id': doc.id
-        })
-        
-    return JsonResponse({'error': 'No file uploaded'})
+            # Process the file
+            if ext == '.pdf':
+                extracted_text = process_pdf(file_path)
+            else:
+                extracted_text = process_image(file_path)
+                
+            # print(f'Extracted text: {extracted_text}')  # Debugging statement
+            # Process with LLM
+            markdown_output = process_with_llm(file_path)
+            # print(f'Markdown output: {markdown_output}')  # Debugging statement
+            
+            # Save to database
+            try:
+                doc = OCRDocument.objects.create(
+                    file=filename,
+                    processed_text=extracted_text,
+                    markdown_output=markdown_output
+                )
+            except Exception as e:
+                return JsonResponse({'error': f'Failed to save to database: {str(e)}'})
+            
+            return JsonResponse({
+                'success': True,
+                'text': extracted_text,
+                'markdown': markdown_output,
+                'html': markdown.markdown(markdown_output),
+            })
+        except Exception as e:
+            # print(f'Error occurred: {str(e)}')  # Debugging statement
+            return JsonResponse({'error': f'An error occurred: {str(e)}'})
+    return JsonResponse({'error': 'Invalid request'})
 
 @login_required
 def download_markdown(request, doc_id):
