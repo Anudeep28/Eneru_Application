@@ -5,16 +5,20 @@
 {% endblock title %}
 
 {% block content %}
-  <div class="container-gemini d-flex flex-column justify-content-center align-items-center" style="height: 100vh;">
-    <h1 class="gemini-text text-center mb-4">Eneru Chatbot</h1>
-    <div class="chat-store ml-10 mr-10 text-center rounded shadow p-4 flex-grow-1 w-100 d-flex flex-column">
-      <div class="chat-messages flex-grow-1 overflow-auto text-left"></div>
-      <form id="chat-form" method="post" action="/chatbot/geminiChat/" class="mt-4 d-flex w-100">
-        {% csrf_token %}
-        <input type="text" id="chat-input" name="message" placeholder="Type your message..." class="form-control me-2 flex-grow-1" />
-        <button type="submit" id="send-button" class="gemini-button text-center mt-5 btn btn-primary"><i class="mr-2 fas fa-paper-plane"></i>Send</button>
-      </form>
-    </div>
+  <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-purple-100">
+    <section class="text-gray-800 body-font">
+      <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
+        <h1 class="text-3xl font-bold text-center mb-4">Eneru Chatbot</h1>
+        <div class="chat-store ml-10 mr-10 text-center rounded shadow p-4 flex-grow-1 w-100 d-flex flex-column">
+          <div class="chat-messages flex-grow-1 overflow-auto text-left"></div>
+          <form id="chat-form" method="post" action="/chatbot/geminiChat/" class="mt-4 d-flex w-100">
+            {% csrf_token %}
+            <input type="text" id="chat-input" name="message" placeholder="Type your message..." class="form-control me-2 flex-grow-1" />
+            <button type="submit" id="send-button" class="gemini-button text-center mt-5 btn btn-primary"><i class="mr-2 fas fa-paper-plane"></i>Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
