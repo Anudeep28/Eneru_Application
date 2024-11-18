@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'kuries',
     'trial1.apps.Trial1Config',
     'chatbot',
+    'ocr_app',
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',
@@ -230,6 +231,8 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 ###### Gemini API KEY
 GEMINI_API_KEY = env("GEMINI_API_KEY")
 
+# Load Together API Key
+TOGETHER_API_KEY = env('TOGETHER_API_KEY')
 
 # have to learn the below command
 if not DEBUG:

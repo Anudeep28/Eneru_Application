@@ -5,40 +5,91 @@
 {% endblock title %}
 
 {% block content %}
-<section class="text-gray-600 body-font">
-    <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
-      <img class="lg:w-2/6 md:w-3/6 w-5/6 mb-10 object-cover object-center rounded" alt="hero" src="{% static 'images/eneru_logo.jpg' %}">
-      <div class="text-center lg:w-2/3 w-full">
-        <h1 class="title-font sm:text-4xl text-3xl mb-4 font-medium text-gray-900">Welcome to Eneru Technology
+<div class="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-purple-100">
+    <section class="text-gray-800 body-font">
+        <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
+            <div class="relative group mb-16">
+                <img class="lg:w-2/3 md:w-4/5 w-full object-cover object-center rounded-2xl shadow-2xl transition-all duration-300 group-hover:scale-105" 
+                     alt="hero" 
+                     src="{% static 'images/eneru_logo.jpg' %}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+            </div>
 
-        </h1>
-        <p class="mb-8 leading-relaxed">
-            You find your Apps here as per your requirements.
-        </p>
-        
-        <div class="flex justify-center">
-        <a href="{% url 'namegen:NameGenerator' %}">
-          <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Name Generator</button>
-        </a>
-        <a href="{% url 'client:client-list' %}">
-            <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Chitfund
-            </button>
-        </a>
-        <a href="{% url 'chatbot:chatbotIndex' %}">
-          <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Eneru Chatbot
-          </button>
-        </a>
-        <a href="{% url 'client:client-list' %}">
-          <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Resume Corrector
-          </button>
-        </a>
-        <a href="{% url 'client:client-list' %}">
-          <button class="ml-4 inline-flex text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded text-lg">Mind Map
-          </button>
-        </a>
+            <div class="text-center lg:w-2/3 w-full mb-12">
+                <h1 class="title-font sm:text-6xl text-4xl mb-8 font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 transition-all duration-300 hover:from-purple-600 hover:to-indigo-600">
+                    Welcome to Eneru Technology
+                </h1>
+                <p class="mb-12 text-xl leading-relaxed text-gray-600 animate-fade-in">
+                    Discover innovative solutions tailored to your needs
+                </p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 w-full max-w-6xl mx-auto">
+                <a href="{% url 'namegen:NameGenerator' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10v10M7 17l10-10"></path>
+                        </svg>
+                        <span>Name Generator</span>
+                    </button>
+                </a>
+
+                <a href="{% url 'client:client-list' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Chitfund</span>
+                    </button>
+                </a>
+
+                <a href="{% url 'chatbot:chatbotIndex' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                        <span>Eneru Chatbot</span>
+                    </button>
+                </a>
+
+                <a href="{% url 'client:client-list' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Resume Corrector</span>
+                    </button>
+                </a>
+
+                <a href="{% url 'client:client-list' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <span>Mind Map</span>
+                    </button>
+                </a>
+
+                <a href="{% url 'ocr_app:index' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>OCR App</span>
+                    </button>
+                </a>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
-{% endblock content %}
+    </section>
+</div>
 
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+        animation: fade-in 1s ease-out forwards;
+    }
+</style>
+{% endblock content %}
