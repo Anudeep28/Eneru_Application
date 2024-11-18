@@ -3,59 +3,54 @@
 {% block content %}
 <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-purple-100">
     <section class="text-gray-800 body-font">
-        <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
-            <h1 class="text-3xl font-bold text-center mb-4">Eneru OCR App</h1>
-            <div class="chat-store ml-10 mr-10 text-center rounded shadow p-4 flex-grow-1 w-100 d-flex flex-column">
-                <form id="upload-form" class="mt-4 d-flex w-100">
-                    {% csrf_token %}
-                    <div class="flex items-center justify-center w-full">
-                        <label for="file-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <i class="fas fa-cloud-upload-alt text-4xl text-gray-500 mb-4"></i>
-                                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
-                                <p class="text-xs text-gray-500">PDF, PNG, JPG or JPEG (max. 10MB)</p>
-                            </div>
-                            <input id="file-upload" type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg" />
-                        </label>
-                    </div>
-                    
-                    <div id="file-info" class="hidden">
-                        <div class="flex items-center space-x-2 text-sm text-gray-500">
-                            <i class="fas fa-file"></i>
-                            <span id="filename"></span>
-                            <button type="button" id="remove-file" class="text-red-500 hover:text-red-700">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition duration-300">
-                        Process File
-                    </button>
-                </form>
-                
-                <!-- Loading Indicator -->
-                <div id="loading" class="hidden">
-                    <div class="flex justify-center items-center space-x-2">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                        <span class="text-gray-600">Processing...</span>
-                    </div>
-                </div>
-
-                <!-- Results Section -->
-                <div id="results" class="hidden space-y-6">
-                    <div class="border-t pt-6">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Results</h2>
-                        <!-- Download Buttons -->
-                        <div class="flex space-x-4 mb-4">
-                            <button id="download-markdown" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 hidden">
-                                <i class="fas fa-download mr-2"></i>Download Markdown
-                            </button>
-                            <button id="download-excel" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 hidden">
-                                <i class="fas fa-file-excel mr-2"></i>Download Excel
-                            </button>
+        <div class="container mx-auto flex px-5 py-24 md:flex-row flex-col items-center">
+            <!-- Upload Form Section -->
+            <div class="w-full md:w-1/2 mb-10 md:mb-0">
+                <h1 class="text-3xl font-bold text-center mb-8">Eneru OCR App</h1>
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <form id="upload-form" class="space-y-6" action="{% url 'ocr_app:upload_file' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="w-full">
+                            <label for="file-upload" class="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-500 mb-4"></i>
+                                    <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Click to upload</span> or drag and drop</p>
+                                    <p class="text-xs text-gray-500">PDF, PNG, JPG or JPEG (max. 10MB)</p>
+                                </div>
+                                <input id="file-upload" name="file" type="file" class="hidden" accept=".pdf,.png,.jpg,.jpeg" />
+                            </label>
                         </div>
                         
+                        <div id="file-info" class="hidden">
+                            <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                                <i class="fas fa-file"></i>
+                                <span id="filename" class="truncate"></span>
+                                <button type="button" id="remove-file" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Process File
+                        </button>
+                    </form>
+                    
+                    <!-- Loading Indicator -->
+                    <div id="loading" class="hidden mt-6">
+                        <div class="flex justify-center items-center space-x-3">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                            <span class="text-gray-600">Processing your file...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="w-full md:w-1/2 md:pl-10">
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Results</h2>
+                    <div id="results" class="hidden">
                         <!-- Tabs -->
                         <div class="border-b border-gray-200">
                             <nav class="-mb-px flex space-x-8">
@@ -74,12 +69,12 @@
                         <!-- Tab Contents -->
                         <div class="mt-4">
                             <div id="markdown-content" class="tab-content">
-                                <pre class="bg-gray-50 rounded-lg p-4 overflow-auto max-h-96"></pre>
+                                <div id="markdown-output" class="prose max-w-none"></div>
                             </div>
                             <div id="preview-content" class="tab-content hidden prose max-w-none">
                             </div>
                             <div id="raw-content" class="tab-content hidden">
-                                <pre class="bg-gray-50 rounded-lg p-4 overflow-auto max-h-96"></pre>
+                                <pre class="bg-gray-50 rounded-lg p-4 overflow-auto max-h-96 whitespace-pre-wrap text-sm"></pre>
                             </div>
                         </div>
                     </div>
@@ -88,135 +83,141 @@
         </div>
     </section>
 </div>
+{% endblock %}
 
-<script>
-let currentDocId = null;
-const downloadMarkdownBtn = document.getElementById('download-markdown');
-const downloadExcelBtn = document.getElementById('download-excel');
-document.addEventListener('DOMContentLoaded', function() {
-    // Function to get CSRF token from cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+<style>
+    .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 45px;
     }
 
-    const form = document.getElementById('upload-form');
-    const fileInput = document.getElementById('file-upload');
-    const fileInfo = document.getElementById('file-info');
-    const filename = document.getElementById('filename');
-    const removeFile = document.getElementById('remove-file');
-    const loading = document.getElementById('loading');
-    const results = document.getElementById('results');
-    
+    @media (max-width: 767px) {
+        .markdown-body {
+            padding: 15px;
+        }
+    }
+
+    .tab-content {
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+$(document).ready(function() {
+    const form = $('#upload-form');
+    const fileInput = $('#file-upload');
+    const fileInfo = $('#file-info');
+    const filename = $('#filename');
+    const removeFile = $('#remove-file');
+    const loading = $('#loading');
+    const results = $('#results');
+    const markdownOutput = $('#markdown-output');
+    const previewContent = $('#preview-content');
+    const rawContent = $('#raw-content pre');
+
+    // Configure marked options
+    marked.setOptions({
+        gfm: true,
+        breaks: true,
+        headerIds: true,
+        mangle: false
+    });
+
     // File input handling
-    fileInput.addEventListener('change', function(e) {
+    fileInput.on('change', function() {
         if (this.files.length > 0) {
             const file = this.files[0];
-            filename.textContent = file.name;
-            fileInfo.classList.remove('hidden');
+            filename.text(file.name);
+            fileInfo.removeClass('hidden');
         }
     });
-    
-    removeFile.addEventListener('click', function() {
-        fileInput.value = '';
-        fileInfo.classList.add('hidden');
+
+    removeFile.on('click', function() {
+        fileInput.val('');
+        fileInfo.addClass('hidden');
     });
-    
+
     // Form submission
-    form.addEventListener('submit', async function(e) {
+    form.on('submit', function(e) {
         e.preventDefault();
-        
-        if (!fileInput.files.length) {
+
+        if (!fileInput[0].files.length) {
             alert('Please select a file first.');
             return;
         }
-        
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        
-        loading.classList.remove('hidden');
-        results.classList.add('hidden');
-        
-        try {
-            const response = await fetch('{% url "ocr_app:upload_file" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
-            
-            // Update results
-            document.querySelector('#markdown-content pre').textContent = data.markdown;
-            document.querySelector('#preview-content').innerHTML = data.html;
-            document.querySelector('#raw-content pre').textContent = data.text;
 
-            // Show download buttons and store document ID
-            if (data.doc_id) {
-                currentDocId = data.doc_id;
-                downloadMarkdownBtn.classList.remove('hidden');
-                downloadExcelBtn.classList.remove('hidden');
-            }
-            
-            results.classList.remove('hidden');
-        } catch (error) {
-            alert('An error occurred while processing the file.');
-        } finally {
-            loading.classList.add('hidden');
-        }
-    });
+        const formData = new FormData(this);
 
-    // Download button handlers
-    downloadMarkdownBtn.addEventListener('click', function() {
-        if (currentDocId) {
-            window.location.href = `/download/markdown/${currentDocId}/`;
-        }
-    });
-    
-    downloadExcelBtn.addEventListener('click', function() {
-        if (currentDocId) {
-            window.location.href = `/download/excel/${currentDocId}/`;
-        }
+        // Show loading, hide results
+        loading.removeClass('hidden');
+        results.addClass('hidden');
+
+        $.ajax({
+            url: form.attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Update content
+                const markdownHtml = marked.parse(data.markdown);
+                markdownOutput.html(markdownHtml).addClass('markdown-body');
+                previewContent.html(data.html).addClass('markdown-body');
+                rawContent.text(data.text);
+
+                // Show results
+                results.removeClass('hidden');
+
+                // Show markdown tab by default
+                $('.tab-content').addClass('hidden');
+                $('#markdown-content').removeClass('hidden');
+
+                // Update tab buttons
+                $('.tab-btn').removeClass('border-indigo-500 text-indigo-600')
+                            .addClass('border-transparent text-gray-500');
+                $('[data-tab="markdown"]').addClass('border-indigo-500 text-indigo-600')
+                                        .removeClass('border-transparent text-gray-500');
+
+                // Clear the file input and info
+                fileInput.val('');
+                fileInfo.addClass('hidden');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error processing file:', error);
+                alert('An error occurred while processing the file: ' + error);
+            },
+            complete: function() {
+                loading.addClass('hidden');
+            }
+        });
     });
 
     // Tab switching
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // Update button states
-            tabButtons.forEach(btn => {
-                btn.classList.remove('border-indigo-500', 'text-indigo-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            button.classList.remove('border-transparent', 'text-gray-500');
-            button.classList.add('border-indigo-500', 'text-indigo-600');
-            
-            // Update content visibility
-            const tabName = button.dataset.tab;
-            tabContents.forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById(`${tabName}-content`).classList.remove('hidden');
-        });
+    $('.tab-btn').on('click', function() {
+        const tabName = $(this).data('tab');
+
+        // Update button states
+        $('.tab-btn').removeClass('border-indigo-500 text-indigo-600')
+                    .addClass('border-transparent text-gray-500');
+        $(this).removeClass('border-transparent text-gray-500')
+               .addClass('border-indigo-500 text-indigo-600');
+
+        // Update content visibility
+        $('.tab-content').addClass('hidden');
+        $(`#${tabName}-content`).removeClass('hidden');
     });
 });
 </script>
