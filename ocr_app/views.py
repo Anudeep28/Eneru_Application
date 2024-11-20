@@ -6,9 +6,6 @@ from django.http import JsonResponse, HttpResponse, FileResponse
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from .models import OCRDocument
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_path
 import markdown
 from together import Together
 import base64
@@ -18,33 +15,38 @@ from bs4 import BeautifulSoup
 import markdown2
 from django.contrib.auth.decorators import login_required
 
-# Configure Tesseract path
-tesseract_path = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-if not os.path.exists(tesseract_path):
-    raise FileNotFoundError(f"Tesseract not found at {tesseract_path}. Please install Tesseract-OCR.")
-pytesseract.pytesseract.tesseract_cmd = tesseract_path
-
 @login_required
 def index(request):
     return render(request, 'ocr_app/index.html')
 
-def process_image(image_path):
-    try:
-        img = Image.open(image_path)
-        text = pytesseract.image_to_string(img)
-        return text
-    except Exception as e:
-        return str(e)
+@login_required
+def upload_file(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        try:
+            file = request.FILES['file']
+            fs = FileSystemStorage()
+            filename = fs.save(file.name, file)
+            file_path = fs.path(filename)
+            file_url = fs.url(filename)
 
-def process_pdf(pdf_path):
-    try:
-        pages = convert_from_path(pdf_path)
-        text = ""
-        for page in pages:
-            text += pytesseract.image_to_string(page) + "\n\n"
-        return text
-    except Exception as e:
-        return str(e)
+            # Process with Together API
+            markdown_output = process_with_llm(file_path)
+            
+            # Save to database
+            doc = OCRDocument.objects.create(
+                file=filename,
+                markdown_output=markdown_output
+            )
+            
+            return JsonResponse({
+                'markdown_output': markdown_output,
+                'doc_id': doc.id,
+                'file_url': file_url
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': f'An error occurred: {str(e)}'})
+    return JsonResponse({'error': 'Invalid request'})
 
 def process_with_llm(file_path):
     try:
@@ -94,60 +96,6 @@ def process_with_llm(file_path):
         return str(e)
 
 @login_required
-def upload_file(request):
-    # print(f"Request method: {request.method}")
-    # print(f"Files in request: {request.FILES}")
-    # print(f"POST data: {request.POST}")
-    
-    if request.method == 'POST' and request.FILES.get('file'):
-        try:
-            file = request.FILES['file']
-            # print(f'File received: {file.name}')  # Debugging statement
-            
-            # Validate file extension
-            ext = os.path.splitext(file.name)[1].lower()
-            if ext not in ['.pdf', '.png', '.jpg', '.jpeg']:
-                return JsonResponse({'error': 'Invalid file format'})
-                
-            # Save the file
-            fs = FileSystemStorage()
-            filename = fs.save(f"documents/{file.name}", file)
-            file_path = fs.path(filename)
-            # print(f'File saved at: {file_path}')  # Debugging statement
-            
-            # Process the file
-            if ext == '.pdf':
-                extracted_text = process_pdf(file_path)
-            else:
-                extracted_text = process_image(file_path)
-                
-            # print(f'Extracted text: {extracted_text}')  # Debugging statement
-            # Process with LLM
-            markdown_output = process_with_llm(file_path)
-            # print(f'Markdown output: {markdown_output}')  # Debugging statement
-            
-            # Save to database
-            try:
-                doc = OCRDocument.objects.create(
-                    file=filename,
-                    processed_text=extracted_text,
-                    markdown_output=markdown_output
-                )
-            except Exception as e:
-                return JsonResponse({'error': f'Failed to save to database: {str(e)}'})
-            
-            return JsonResponse({
-                'success': True,
-                'text': extracted_text,
-                'markdown': markdown_output,
-                'html': markdown.markdown(markdown_output),
-            })
-        except Exception as e:
-            # print(f'Error occurred: {str(e)}')  # Debugging statement
-            return JsonResponse({'error': f'An error occurred: {str(e)}'})
-    return JsonResponse({'error': 'Invalid request'})
-
-@login_required
 def download_markdown(request, doc_id):
     try:
         doc = OCRDocument.objects.get(id=doc_id)
@@ -164,25 +112,48 @@ def download_excel(request, doc_id):
         # Convert markdown to HTML
         html_content = markdown2.markdown(doc.markdown_output)
         
-        # Extract relevant data from HTML (this is a simplified approach)
-        # You may need to use BeautifulSoup or similar to parse the HTML properly
-        df_data = []
-        # Example: Extracting paragraphs as rows
+        # Parse HTML content
         soup = BeautifulSoup(html_content, 'html.parser')
-        for p in soup.find_all('p'):
-            df_data.append([p.get_text()])  # Assuming each paragraph is a row
         
-        # Create DataFrame from extracted data
-        df = pd.DataFrame(df_data, columns=['Content'])
+        # Extract data more comprehensively
+        data = []
         
-        # Create Excel file
-        excel_file = BytesIO()
-        # print(df.head())
-        df.to_excel(excel_file, index=False, engine='openpyxl')
-        excel_file.seek(0)
+        # Process tables if they exist
+        tables = soup.find_all('table')
+        if tables:
+            for table in tables:
+                rows = table.find_all('tr')
+                for row in rows:
+                    cols = row.find_all(['td', 'th'])
+                    data.append([col.get_text(strip=True) for col in cols])
+        else:
+            # If no tables, extract text content
+            for element in soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li']):
+                data.append([element.get_text(strip=True)])
         
-        response = HttpResponse(excel_file.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = f'attachment; filename="output_{doc_id}.xlsx"'
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        
+        # Determine if it's CSV or Excel download
+        format_type = request.GET.get('format', 'excel')
+        
+        if format_type == 'csv':
+            # Create CSV response
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = f'attachment; filename="output_{doc_id}.csv"'
+            df.to_csv(response, index=False, header=False)
+        else:
+            # Create Excel file
+            excel_file = BytesIO()
+            df.to_excel(excel_file, index=False, header=False, engine='openpyxl')
+            excel_file.seek(0)
+            
+            response = HttpResponse(
+                excel_file.read(),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="output_{doc_id}.xlsx"'
+            
         return response
     except OCRDocument.DoesNotExist:
         return JsonResponse({'error': 'Document not found'}, status=404)

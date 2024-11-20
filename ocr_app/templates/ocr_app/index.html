@@ -43,6 +43,12 @@
                             <span class="text-gray-600">Processing your file...</span>
                         </div>
                     </div>
+                    
+                    <!-- Image Preview -->
+                    <div id="image-preview" class="hidden mb-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Uploaded Image</h3>
+                        <img id="preview-img" src="" alt="Uploaded image" class="max-w-full h-auto rounded-lg shadow-lg">
+                    </div>
                 </div>
             </div>
 
@@ -69,6 +75,21 @@
                         <!-- Tab Contents -->
                         <div class="mt-4">
                             <div id="markdown-content" class="tab-content">
+                                <div id="markdown-output" class="prose max-w-none"></div>
+                                <div class="mt-4 flex space-x-4">
+                                    <a id="download-markdown" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        <i class="fas fa-download mr-2"></i> Download Markdown
+                                    </a>
+                                    <a id="download-csv" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        <i class="fas fa-file-csv mr-2"></i> Download CSV
+                                    </a>
+                                    <a id="download-excel" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        <i class="fas fa-file-excel mr-2"></i> Download Excel
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="markdown-preview" class="hidden mt-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Markdown Preview</h3>
                                 <div id="markdown-output" class="prose max-w-none"></div>
                             </div>
                             <div id="preview-content" class="tab-content hidden prose max-w-none">
@@ -113,112 +134,109 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 $(document).ready(function() {
-    const form = $('#upload-form');
     const fileInput = $('#file-upload');
     const fileInfo = $('#file-info');
     const filename = $('#filename');
-    const removeFile = $('#remove-file');
     const loading = $('#loading');
     const results = $('#results');
-    const markdownOutput = $('#markdown-output');
-    const previewContent = $('#preview-content');
-    const rawContent = $('#raw-content pre');
+    const imagePreview = $('#image-preview');
+    const previewImg = $('#preview-img');
+    const form = $('#upload-form');
 
-    // Configure marked options
+    // Configure marked.js
     marked.setOptions({
-        gfm: true,
         breaks: true,
-        headerIds: true,
-        mangle: false
+        gfm: true
     });
 
-    // File input handling
+    // File input change handler
     fileInput.on('change', function() {
-        if (this.files.length > 0) {
-            const file = this.files[0];
+        const file = this.files[0];
+        if (file) {
             filename.text(file.name);
             fileInfo.removeClass('hidden');
+            
+            // Show image preview
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.attr('src', e.target.result);
+                    imagePreview.removeClass('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
         }
     });
 
-    removeFile.on('click', function() {
-        fileInput.val('');
-        fileInfo.addClass('hidden');
-    });
-
-    // Form submission
+    // Form submit handler
     form.on('submit', function(e) {
         e.preventDefault();
-
+        
         if (!fileInput[0].files.length) {
             alert('Please select a file first.');
             return;
         }
-
+        
         const formData = new FormData(this);
-
-        // Show loading, hide results
         loading.removeClass('hidden');
         results.addClass('hidden');
-
+        
         $.ajax({
-            url: form.attr('action'),
-            method: 'POST',
+            url: $(this).attr('action'),
+            type: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             success: function(data) {
+                console.log('Response data:', data);
+                
                 if (data.error) {
-                    throw new Error(data.error);
+                    showError(data.error);
+                    return;
                 }
-
-                // Update content
-                const markdownHtml = marked.parse(data.markdown);
-                markdownOutput.html(markdownHtml).addClass('markdown-body');
-                previewContent.html(data.html).addClass('markdown-body');
-                rawContent.text(data.text);
-
-                // Show results
-                results.removeClass('hidden');
-
-                // Show markdown tab by default
-                $('.tab-content').addClass('hidden');
-                $('#markdown-content').removeClass('hidden');
-
-                // Update tab buttons
-                $('.tab-btn').removeClass('border-indigo-500 text-indigo-600')
-                            .addClass('border-transparent text-gray-500');
-                $('[data-tab="markdown"]').addClass('border-indigo-500 text-indigo-600')
-                                        .removeClass('border-transparent text-gray-500');
-
-                // Clear the file input and info
-                fileInput.val('');
-                fileInfo.addClass('hidden');
+                
+                // Update markdown content
+                const markdownHtml = marked.parse(data.markdown_output);
+                $('#markdown-output').html(markdownHtml);
+                
+                // Update download links with the document ID
+                $('#download-markdown')
+                    .removeClass('hidden')
+                    .attr('href', `/ocr/download/markdown/${data.doc_id}/`);
+                    
+                $('#download-csv')
+                    .removeClass('hidden')
+                    .attr('href', `/ocr/download/excel/${data.doc_id}/?format=csv`);
+                    
+                $('#download-excel')
+                    .removeClass('hidden')
+                    .attr('href', `/ocr/download/excel/${data.doc_id}/`);
+                
+                // Show results section
+                $('#results').removeClass('hidden');
             },
             error: function(xhr, status, error) {
-                console.error('Error processing file:', error);
-                alert('An error occurred while processing the file: ' + error);
+                console.error('Error:', error);
+                showError('An error occurred while processing the file.');
             },
             complete: function() {
                 loading.addClass('hidden');
             }
         });
     });
-
-    // Tab switching
-    $('.tab-btn').on('click', function() {
-        const tabName = $(this).data('tab');
-
-        // Update button states
-        $('.tab-btn').removeClass('border-indigo-500 text-indigo-600')
-                    .addClass('border-transparent text-gray-500');
-        $(this).removeClass('border-transparent text-gray-500')
-               .addClass('border-indigo-500 text-indigo-600');
-
-        // Update content visibility
-        $('.tab-content').addClass('hidden');
-        $(`#${tabName}-content`).removeClass('hidden');
+    
+    // Remove file button handler
+    $('#remove-file').on('click', function() {
+        fileInput.val('');
+        fileInfo.addClass('hidden');
+        imagePreview.addClass('hidden');
+        previewImg.attr('src', '');
+        results.addClass('hidden');
     });
+
+    function showError(message) {
+        alert(message);
+    }
 });
 </script>
 {% endblock %}
