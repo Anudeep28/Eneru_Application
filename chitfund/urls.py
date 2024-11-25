@@ -36,6 +36,7 @@ urlpatterns = [
     path('namgen/', include('trial1.urls',namespace='namegen')),
     path('chatbot/', include('chatbot.urls',namespace='chatbot')),
     path('ocr/', include('ocr_app.urls', namespace='ocr_app')),
+    path('transcribe/', include('transcribe_app.urls', namespace='transcribe_app')),
     # login
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

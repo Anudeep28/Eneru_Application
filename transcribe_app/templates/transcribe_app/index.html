@@ -1,0 +1,306 @@
+{% extends "ocr_app/base.html" %}
+
+{% block extra_css %}
+<style>
+    .recording {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .markdown-preview {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        padding: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
+        <div class="p-6">
+            <h1 class="text-3xl font-bold text-indigo-600 mb-8">Speech to Text Transcription</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Recording Controls -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-center space-x-4">
+                        <button id="recordButton" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-300 flex items-center space-x-2">
+                            <i class="fas fa-microphone"></i>
+                            <span>Start Recording</span>
+                        </button>
+                        <button id="pauseButton" class="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition-colors duration-300 flex items-center space-x-2 hidden">
+                            <i class="fas fa-pause"></i>
+                            <span>Pause</span>
+                        </button>
+                    </div>
+                    <div id="recordingStatus" class="text-center text-gray-600 hidden">
+                        Recording in progress...
+                    </div>
+                    <div class="text-sm text-gray-500 text-center mt-2">
+                        Click to start/stop recording your voice
+                    </div>
+                </div>
+
+                <!-- Transcription Display -->
+                <div class="border rounded-lg p-4">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Transcribed Text</h2>
+                    <div id="transcriptionOutput" class="markdown-preview min-h-[200px] bg-gray-50 rounded p-4">
+                        Your transcribed text will appear here...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Options -->
+            <div id="downloadOptions" class="mt-8 flex justify-center space-x-4 hidden">
+                <button id="downloadMarkdown" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center space-x-2">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Download Markdown</span>
+                </button>
+                <button id="downloadWord" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center space-x-2">
+                    <i class="fas fa-file-word"></i>
+                    <span>Download Word</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+let isPaused = false;
+let accumulatedText = '';
+let currentStream = null;
+
+document.getElementById('recordButton').addEventListener('click', toggleRecording);
+document.getElementById('pauseButton').addEventListener('click', togglePause);
+
+async function processAudioChunks() {
+    if (audioChunks.length > 0) {
+        try {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                sampleRate: 16000
+            });
+            
+            // Convert to AudioBuffer
+            const arrayBuffer = await audioBlob.arrayBuffer();
+            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            
+            // Get mono channel data
+            const pcmData = audioBuffer.getChannelData(0);
+            
+            // Create the audio blob
+            const wavBlob = new Blob([pcmData.buffer], { type: 'audio/wav' });
+            await sendAudioForTranscription(wavBlob);
+        } catch (err) {
+            console.error('Error processing audio chunks:', err);
+        }
+        // Clear chunks after processing
+        audioChunks = [];
+    }
+}
+
+async function toggleRecording() {
+    const recordButton = document.getElementById('recordButton');
+    const pauseButton = document.getElementById('pauseButton');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const downloadOptions = document.getElementById('downloadOptions');
+    const transcriptionOutput = document.getElementById('transcriptionOutput');
+
+    if (!isRecording) {
+        try {
+            currentStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: 16000,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true
+                } 
+            });
+            
+            mediaRecorder = new MediaRecorder(currentStream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                await processAudioChunks();
+                downloadOptions.classList.remove('hidden');
+            };
+
+            mediaRecorder.start(1000); // Collect data every second
+            isRecording = true;
+            isPaused = false;
+            recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
+            recordButton.classList.add('bg-red-600', 'hover:bg-red-700');
+            recordButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+            pauseButton.classList.remove('hidden');
+            recordingStatus.classList.remove('hidden');
+            recordingStatus.textContent = 'Recording in progress...';
+            
+            // Clear accumulated text if starting fresh
+            if (transcriptionOutput.textContent === 'Your transcribed text will appear here...') {
+                accumulatedText = '';
+                transcriptionOutput.textContent = '';
+            }
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
+        }
+    } else {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+        }
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        isRecording = false;
+        isPaused = false;
+        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
+        recordButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+        recordButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        pauseButton.classList.add('hidden');
+        recordingStatus.classList.add('hidden');
+    }
+}
+
+async function togglePause() {
+    if (!mediaRecorder) return;
+
+    const pauseButton = document.getElementById('pauseButton');
+    const recordingStatus = document.getElementById('recordingStatus');
+
+    try {
+        if (!isPaused && mediaRecorder.state === 'recording') {
+            // Pause recording
+            mediaRecorder.pause();
+            // Process current chunks
+            await processAudioChunks();
+            // Start a new MediaRecorder for the next segment
+            mediaRecorder = new MediaRecorder(currentStream);
+            audioChunks = [];
+            
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                await processAudioChunks();
+            };
+
+            isPaused = true;
+            pauseButton.innerHTML = '<i class="fas fa-play"></i><span>Resume</span>';
+            pauseButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+            pauseButton.classList.add('bg-green-600', 'hover:bg-green-700');
+            recordingStatus.textContent = 'Recording paused...';
+        } else if (isPaused) {
+            // Resume recording
+            mediaRecorder.start(1000);
+            isPaused = false;
+            pauseButton.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+            pauseButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+            pauseButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+            recordingStatus.textContent = 'Recording in progress...';
+        }
+    } catch (err) {
+        console.error('Error in togglePause:', err);
+        alert('Error toggling pause state. Please try stopping and starting the recording again.');
+    }
+}
+
+async function sendAudioForTranscription(audioBlob) {
+    const reader = new FileReader();
+    reader.readAsDataURL(audioBlob);
+    reader.onloadend = async () => {
+        try {
+            const response = await fetch('/transcribe/transcribe/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    audio: reader.result
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Accumulate text and update display
+                if (accumulatedText && data.text) {
+                    accumulatedText += ' ' + data.text.trim();
+                } else if (data.text) {
+                    accumulatedText = data.text.trim();
+                }
+                const transcriptionOutput = document.getElementById('transcriptionOutput');
+                transcriptionOutput.textContent = accumulatedText;
+            } else {
+                console.error('Transcription error:', data.error);
+                alert('Error transcribing audio: ' + data.error);
+            }
+        } catch (err) {
+            console.error('Error sending audio for transcription:', err);
+            alert('Error sending audio for transcription. Please try again.');
+        }
+    };
+}
+
+document.getElementById('downloadMarkdown').addEventListener('click', async () => {
+    const text = document.getElementById('transcriptionOutput').textContent;
+    try {
+        const response = await fetch('/transcribe/download/markdown/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text })
+        });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transcription.md';
+        a.click();
+    } catch (err) {
+        console.error('Error downloading markdown:', err);
+        alert('Error downloading markdown. Please try again.');
+    }
+});
+
+document.getElementById('downloadWord').addEventListener('click', async () => {
+    const text = document.getElementById('transcriptionOutput').textContent;
+    try {
+        const response = await fetch('/transcribe/download/word/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ text })
+        });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transcription.docx';
+        a.click();
+    } catch (err) {
+        console.error('Error downloading word document:', err);
+        alert('Error downloading word document. Please try again.');
+    }
+});
+</script>
+{% endblock %}
