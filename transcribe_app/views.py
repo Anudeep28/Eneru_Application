@@ -73,7 +73,8 @@ def process_with_gemini(text):
     """Process transcribed text with Gemini for corrections."""
     try:
         chat = genai.GenerativeModel(model_name='gemini-1.5-flash')
-        prompt = f"""As an expert text editor, review and correct the following transcribed text. 
+        prompt = f"""As an expert text editor, review and correct the following transcribed text.
+        Do not add anything other than corrections. Just correct the text. 
         Focus on:
         1. Correct spelling of names, locations, places, addresses
         2. Fix number formatting (dates, phone numbers, etc.)
