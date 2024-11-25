@@ -76,11 +76,15 @@ def process_with_gemini(text):
         prompt = f"""As an expert text editor, review and correct the following transcribed text.
         Do not add anything other than corrections. Just correct the text. 
         Focus on:
-        1. Correct spelling of names, locations, places, addresses
+        Main read through the text and understand the context of the text and
+        then do the following:
+        1. Correct spelling of names, locations, places, addresses.
         2. Fix number formatting (dates, phone numbers, etc.)
         3. Correct currency mentions
-        4. Improve text formatting and punctuation
-        5. Maintain the original meaning and context
+        4. Improve text formatting and punctuation.
+        5. Remove any unnecessary words or phrases.
+        6. Do not remove any words or text just correct the text.
+        7. Just do points 1, 2, 3, 4 without changing whisper output.
         
         Text to process: {text}
         
