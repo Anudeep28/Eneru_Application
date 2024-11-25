@@ -78,6 +78,15 @@
                         <span>OCR App</span>
                     </button>
                 </a>
+
+                <a href="{% url 'transcribe_app:index' %}" class="transform transition-all duration-300 hover:scale-105">
+                    <button class="flex items-center space-x-2 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-purple-600 hover:to-indigo-600 border-0 py-3 px-8 focus:outline-none rounded-lg text-lg shadow-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                        </svg>
+                        <span>Speech to Text</span>
+                    </button>
+                </a>
             </div>
         </div>
     </section>

@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'trial1.apps.Trial1Config',
     'chatbot',
     'ocr_app',
+    'transcribe_app',
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',
