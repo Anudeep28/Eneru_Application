@@ -17,6 +17,8 @@ import torch
 from datasets import Audio, Dataset, Features, Value
 import warnings
 import librosa
+import google.generativeai as genai
+from django.conf import settings
 
 # Suppress specific warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
@@ -26,6 +28,10 @@ warnings.filterwarnings('ignore', category=UserWarning)
 transcriber = None
 processor = None
 model = None
+
+# Initialize Gemini with the same configuration as chatbot
+API_KEY = settings.GEMINI_API_KEY
+genai.configure(api_key=API_KEY)
 
 def initialize_transcriber():
     global transcriber, processor, model
@@ -63,6 +69,29 @@ def initialize_transcriber():
             framework="pt"
         )
 
+def process_with_gemini(text):
+    """Process transcribed text with Gemini for corrections."""
+    try:
+        chat = genai.GenerativeModel(model_name='gemini-1.5-flash')
+        prompt = f"""As an expert text editor, review and correct the following transcribed text. 
+        Focus on:
+        1. Correct spelling of names, locations, places, addresses
+        2. Fix number formatting (dates, phone numbers, etc.)
+        3. Correct currency mentions
+        4. Improve text formatting and punctuation
+        5. Maintain the original meaning and context
+        
+        Text to process: {text}
+        
+        Provide only the corrected text without any explanations or markdown."""
+
+        result = chat.generate_content(prompt)
+        corrected_text = result.text.strip()
+        return corrected_text
+    except Exception as e:
+        print(f"Gemini processing error: {str(e)}")
+        return text  # Return original text if Gemini processing fails
+
 def index(request):
     return render(request, 'transcribe_app/index.html')
 
@@ -74,8 +103,14 @@ def transcribe_audio(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            audio_data = data.get('audio')
+            audio_data = data.get('audio', '')
             
+            if not audio_data:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No audio data provided'
+                }, status=400)
+
             try:
                 # Remove the data URL prefix if present
                 if ',' in audio_data:
@@ -86,10 +121,6 @@ def transcribe_audio(request):
                 
                 # Convert to numpy array (assuming float32 format)
                 audio_np = np.frombuffer(audio_binary, dtype=np.float32)
-                
-                # Print debug information
-                # print(f"Audio shape: {audio_np.shape}")
-                # print(f"Audio min: {audio_np.min()}, max: {audio_np.max()}")
                 
                 # Normalize audio to [-1, 1] range
                 if abs(audio_np).max() > 0:
@@ -108,8 +139,6 @@ def transcribe_audio(request):
                         'error': 'Invalid audio data: contains NaN or Inf values'
                     }, status=400)
                 
-                # print(f"Processed audio min: {audio_np.min()}, max: {audio_np.max()}")
-                
                 # Use the transcriber pipeline
                 transcribed_text = transcriber(
                     {"array": audio_np, "sampling_rate": 16000},
@@ -119,11 +148,13 @@ def transcribe_audio(request):
                     return_timestamps=False,
                 )["text"]
                 
-                # print(f"Transcribed text: {transcribed_text}")
+                # Process transcribed text with Gemini
+                corrected_text = process_with_gemini(transcribed_text)
                 
                 return JsonResponse({
                     'success': True,
-                    'text': transcribed_text
+                    'text': corrected_text,
+                    'original_text': transcribed_text  # Optional: include original text for comparison
                 })
             
             except Exception as e:
