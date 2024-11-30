@@ -15,68 +15,82 @@
         line-height: 1.6;
         padding: 1rem;
     }
+    .btn {
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+    }
+    .btn-primary:hover {
+        background-color: #2563eb;
+    }
+    .btn-secondary {
+        background-color: #6b7280;
+        color: white;
+        border: none;
+    }
+    .btn-secondary:hover {
+        background-color: #4b5563;
+    }
+    .btn-danger {
+        background-color: #ef4444;
+        color: white;
+        border: none;
+    }
+    .btn-danger:hover {
+        background-color: #dc2626;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto">
-    <div class="bg-white shadow-xl rounded-lg overflow-hidden">
-        <div class="p-6">
-            <h1 class="text-3xl font-bold text-indigo-600 mb-8">Speech to Text Transcription</h1>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Recording Controls -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-center space-x-4">
-                        <button id="recordButton" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors duration-300 flex items-center space-x-2">
-                            <i class="fas fa-microphone"></i>
-                            <span>Start Recording</span>
-                        </button>
-                        <button id="pauseButton" class="bg-yellow-600 text-white px-6 py-3 rounded-lg hover:bg-yellow-700 transition-colors duration-300 flex items-center space-x-2 hidden">
-                            <i class="fas fa-pause"></i>
-                            <span>Pause</span>
-                        </button>
-                    </div>
-                    <div id="recordingStatus" class="text-center text-gray-600 hidden">
-                        Recording in progress...
-                    </div>
-                    <div class="text-sm text-gray-500 text-center mt-2">
-                        Click to start/stop recording your voice
-                    </div>
-                </div>
-
-                <!-- Transcription Display -->
-                <div class="border rounded-lg p-4">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold text-gray-700">Transcribed Text</h2>
-                        <label class="inline-flex items-center cursor-pointer">
-                            <span class="mr-3 text-sm font-medium text-gray-900">Show AI Corrections</span>
-                            <div class="relative">
-                                <input type="checkbox" id="toggleCorrections" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </div>
-                        </label>
-                    </div>
-                    <div id="transcriptionOutput" class="markdown-preview min-h-[200px] bg-gray-50 rounded p-4">
-                        Your transcribed text will appear here...
-                    </div>
-                    <div class="mt-2 text-sm text-gray-500">
-                        Toggle switch to see the AI-corrected version with improved formatting and spelling
-                    </div>
-                </div>
-            </div>
-
-            <!-- Download Options -->
-            <div id="downloadOptions" class="mt-8 flex justify-center space-x-4 hidden">
-                <button id="downloadMarkdown" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center space-x-2">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Download Markdown</span>
-                </button>
-                <button id="downloadWord" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center space-x-2">
-                    <i class="fas fa-file-word"></i>
-                    <span>Download Word</span>
-                </button>
-            </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        {% csrf_token %}
+        
+        <!-- Recording Controls -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="recordButton" 
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    onclick="handleRecordButtonClick()">
+                Start Recording
+            </button>
+        </div>
+        
+        <!-- Recording Status -->
+        <div class="text-center mb-8">
+            <span id="recordingStatus" class="text-lg font-medium text-gray-700">Click 'Start Recording' to begin</span>
+            <div id="errorMessage" class="text-red-500 mt-2 hidden"></div>
+        </div>
+        
+        <!-- Transcription Output -->
+        <div class="mb-8">
+            <textarea id="transcriptionText" 
+                      class="w-full h-64 p-4 border rounded-lg resize-none shadow-sm"
+                      readonly
+                      placeholder="Transcription will appear here..."></textarea>
+        </div>
+        
+        <!-- Download Options -->
+        <div id="downloadOptions" class="mt-8 flex justify-center space-x-4">
+            <button id="downloadMarkdown" 
+                    class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-300 flex items-center space-x-2 opacity-50 cursor-not-allowed"
+                    disabled>
+                <i class="fas fa-file-alt"></i>
+                <span>Download Markdown</span>
+            </button>
+            <button id="downloadWord" 
+                    class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center space-x-2 opacity-50 cursor-not-allowed"
+                    disabled>
+                <i class="fas fa-file-word"></i>
+                <span>Download Word</span>
+            </button>
         </div>
     </div>
 </div>
@@ -84,249 +98,452 @@
 
 {% block extra_js %}
 <script>
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-let isPaused = false;
-let accumulatedText = '';
-let accumulatedOriginalText = '';
-let currentStream = null;
+// Global transcription manager instance
+let transcriptionManager = null;
 
-document.getElementById('recordButton').addEventListener('click', toggleRecording);
-document.getElementById('pauseButton').addEventListener('click', togglePause);
-document.getElementById('toggleCorrections').addEventListener('change', function(e) {
-    const transcriptionOutput = document.getElementById('transcriptionOutput');
-    if (e.target.checked) {
-        transcriptionOutput.textContent = accumulatedText || 'Your transcribed text will appear here...';
-    } else {
-        transcriptionOutput.textContent = accumulatedOriginalText || 'Your transcribed text will appear here...';
+// Get CSRF token
+function getCSRFToken() {
+    const csrfInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return csrfInput ? csrfInput.value : '';
+}
+
+// Initialize when the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('Initializing transcription manager...');
+    try {
+        transcriptionManager = new AudioTranscriptionManager();
+        console.log('Transcription manager initialized');
+    } catch (error) {
+        console.error('Initialization error:', error);
     }
 });
 
-async function toggleRecording() {
-    const recordButton = document.getElementById('recordButton');
-    const pauseButton = document.getElementById('pauseButton');
-    const recordingStatus = document.getElementById('recordingStatus');
-    const downloadOptions = document.getElementById('downloadOptions');
-    const transcriptionOutput = document.getElementById('transcriptionOutput');
+class AudioTranscriptionManager {
+    constructor() {
+        console.log('Constructing AudioTranscriptionManager');
+        this.WAV_SAMPLE_RATE = 16000;
+        this.CHUNK_DURATION = 30; // 30 seconds chunk
+        this.SILENCE_THRESHOLD = 0.01; // Threshold for silence detection
+        this.MIN_SILENCE_DURATION = 1; // Minimum silence duration in seconds to trigger chunk processing
+        
+        this.audioContext = null;
+        this.mediaRecorder = null;
+        this.currentStream = null;
+        this.audioChunks = [];
+        this.processingChunks = []; // Separate array for processing
+        this.isRecording = false;
+        this.isProcessing = false;
+        this.accumulatedText = '';
+        this.transcriptionQueue = [];
+        this.isProcessingQueue = false;
+        this.chunkStartTime = 0;
+        this.lastAudioLevel = 0;
+        this.silenceStartTime = 0;
+        this.totalSamples = 0;
 
-    if (!isRecording) {
-        try {
-            currentStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: {
-                    sampleRate: 16000,
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true
-                } 
-            });
-            
-            mediaRecorder = new MediaRecorder(currentStream);
-            audioChunks = [];
+        // Initialize UI elements
+        this.recordButton = document.getElementById('recordButton');
+        this.transcriptionText = document.getElementById('transcriptionText');
+        this.recordingStatus = document.getElementById('recordingStatus');
+        
+        // Initialize audio context with specific sample rate
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
+            sampleRate: this.WAV_SAMPLE_RATE
+        });
 
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                await processAudioChunks();
-                downloadOptions.classList.remove('hidden');
-            };
-
-            mediaRecorder.start(1000);
-            isRecording = true;
-            isPaused = false;
-            recordButton.innerHTML = '<i class="fas fa-stop"></i><span>Stop Recording</span>';
-            recordButton.classList.add('bg-red-600', 'hover:bg-red-700');
-            recordButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
-            pauseButton.classList.remove('hidden');
-            recordingStatus.classList.remove('hidden');
-            recordingStatus.textContent = 'Recording in progress...';
-            
-            if (transcriptionOutput.textContent === 'Your transcribed text will appear here...') {
-                accumulatedText = '';
-                accumulatedOriginalText = '';
-                transcriptionOutput.textContent = '';
-            }
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
-            alert('Error accessing microphone. Please ensure you have granted microphone permissions.');
-        }
-    } else {
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-            mediaRecorder.stop();
-        }
-        if (currentStream) {
-            currentStream.getTracks().forEach(track => track.stop());
-            currentStream = null;
-        }
-        isRecording = false;
-        isPaused = false;
-        recordButton.innerHTML = '<i class="fas fa-microphone"></i><span>Start Recording</span>';
-        recordButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-        recordButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
-        pauseButton.classList.add('hidden');
-        recordingStatus.classList.add('hidden');
+        // Bind methods
+        this.processNextInQueue = this.processNextInQueue.bind(this);
     }
-}
 
-async function processAudioChunks() {
-    if (audioChunks.length > 0) {
+    async processCurrentChunk() {
+        if (this.audioChunks.length === 0) return;
+
         try {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                sampleRate: 16000
-            });
+            // Calculate total samples needed for 30 seconds
+            const samplesNeeded = this.WAV_SAMPLE_RATE * 30;
             
-            // Convert to AudioBuffer
-            const arrayBuffer = await audioBlob.arrayBuffer();
-            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            // Create a copy of the chunks for processing
+            this.processingChunks = [...this.audioChunks];
             
-            // Get mono channel data
-            const pcmData = audioBuffer.getChannelData(0);
+            // Calculate total length
+            const totalLength = this.processingChunks.reduce((acc, chunk) => acc + chunk.length, 0);
             
-            // Create the audio blob
-            const wavBlob = new Blob([pcmData.buffer], { type: 'audio/wav' });
-            await sendAudioForTranscription(wavBlob);
-        } catch (err) {
-            console.error('Error processing audio chunks:', err);
-        }
-        // Clear chunks after processing
-        audioChunks = [];
-    }
-}
-
-async function togglePause() {
-    if (!mediaRecorder) return;
-
-    const pauseButton = document.getElementById('pauseButton');
-    const recordingStatus = document.getElementById('recordingStatus');
-
-    try {
-        if (!isPaused && mediaRecorder.state === 'recording') {
-            // Pause recording
-            mediaRecorder.pause();
-            // Process current chunks
-            await processAudioChunks();
-            // Start a new MediaRecorder for the next segment
-            mediaRecorder = new MediaRecorder(currentStream);
-            audioChunks = [];
-            
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                await processAudioChunks();
-            };
-
-            isPaused = true;
-            pauseButton.innerHTML = '<i class="fas fa-play"></i><span>Resume</span>';
-            pauseButton.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
-            pauseButton.classList.add('bg-green-600', 'hover:bg-green-700');
-            recordingStatus.textContent = 'Recording paused...';
-        } else if (isPaused) {
-            // Resume recording
-            mediaRecorder.start(1000);
-            isPaused = false;
-            pauseButton.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
-            pauseButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-            pauseButton.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
-            recordingStatus.textContent = 'Recording in progress...';
-        }
-    } catch (err) {
-        console.error('Error in togglePause:', err);
-        alert('Error toggling pause state. Please try stopping and starting the recording again.');
-    }
-}
-
-async function sendAudioForTranscription(audioBlob) {
-    const reader = new FileReader();
-    reader.readAsDataURL(audioBlob);
-    reader.onloadend = async () => {
-        try {
-            const response = await fetch('/transcribe/transcribe/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    audio: reader.result
-                })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                // Store both versions of the text
-                if (accumulatedText && data.text) {
-                    accumulatedText += ' ' + data.text.trim();
-                    accumulatedOriginalText += ' ' + data.original_text.trim();
-                } else if (data.text) {
-                    accumulatedText = data.text.trim();
-                    accumulatedOriginalText = data.original_text.trim();
+            // If we have more than 30 seconds worth of audio, we'll process multiple chunks
+            while (this.processingChunks.length > 0) {
+                let currentChunkLength = 0;
+                let chunksToProcess = [];
+                
+                // Collect chunks until we have 30 seconds or run out of chunks
+                while (currentChunkLength < samplesNeeded && this.processingChunks.length > 0) {
+                    const chunk = this.processingChunks.shift();
+                    chunksToProcess.push(chunk);
+                    currentChunkLength += chunk.length;
                 }
                 
-                // Display based on toggle state
-                const transcriptionOutput = document.getElementById('transcriptionOutput');
-                const showCorrections = document.getElementById('toggleCorrections').checked;
-                transcriptionOutput.textContent = showCorrections ? accumulatedText : accumulatedOriginalText;
-            } else {
-                console.error('Transcription error:', data.error);
-                alert('Error transcribing audio: ' + data.error);
+                // Concatenate the chunks we're going to process
+                const concatenated = new Float32Array(currentChunkLength);
+                let offset = 0;
+                for (const chunk of chunksToProcess) {
+                    concatenated.set(chunk, offset);
+                    offset += chunk.length;
+                }
+                
+                // Pad or trim to exactly 30 seconds
+                let processedAudio;
+                if (concatenated.length < samplesNeeded) {
+                    // Pad with silence if less than 30 seconds
+                    processedAudio = new Float32Array(samplesNeeded);
+                    processedAudio.set(concatenated, 0);
+                } else {
+                    // Take exactly 30 seconds
+                    processedAudio = concatenated.slice(0, samplesNeeded);
+                    
+                    // If we have remaining samples, put them back at the start of processingChunks
+                    if (concatenated.length > samplesNeeded) {
+                        this.processingChunks.unshift(concatenated.slice(samplesNeeded));
+                    }
+                }
+
+                // Convert to WAV and add to queue
+                const wavBlob = await this.createWavBlob(processedAudio);
+                this.addToTranscriptionQueue(wavBlob);
             }
-        } catch (err) {
-            console.error('Error sending audio for transcription:', err);
-            alert('Error sending audio for transcription. Please try again.');
+            
+            // Clear processed chunks from the main audioChunks array
+            const remainingSamples = totalLength % samplesNeeded;
+            if (remainingSamples > 0) {
+                // Keep only the remainder that wasn't processed
+                this.audioChunks = [this.audioChunks[this.audioChunks.length - 1].slice(-remainingSamples)];
+            } else {
+                this.audioChunks = [];
+            }
+
+        } catch (error) {
+            console.error('Error processing audio chunks:', error);
+            this.showError('Error processing audio. Please try again.');
         }
-    };
+    }
+
+    async startRecording() {
+        try {
+            console.log('Starting recording...');
+            if (this.isRecording) {
+                console.warn('Already recording');
+                return;
+            }
+
+            // Reset recording state
+            this.accumulatedText = '';
+            this.transcriptionText.value = '';
+            this.transcriptionQueue = [];
+            this.isProcessingQueue = false;
+            this.audioChunks = [];
+            this.processingChunks = [];
+            this.chunkStartTime = this.audioContext.currentTime;
+            this.silenceStartTime = 0;
+            this.lastAudioLevel = 0;
+            this.totalSamples = 0;
+
+            // Request microphone access with specific constraints
+            this.currentStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: this.WAV_SAMPLE_RATE,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            // Create audio processing pipeline
+            const source = this.audioContext.createMediaStreamSource(this.currentStream);
+            const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+            
+            processor.onaudioprocess = (e) => {
+                if (this.isRecording) {
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    this.audioChunks.push(new Float32Array(inputData));
+                    this.totalSamples += inputData.length;
+                    
+                    // Calculate current audio level
+                    const audioLevel = Math.sqrt(inputData.reduce((acc, val) => acc + val * val, 0) / inputData.length);
+                    
+                    const currentTime = this.audioContext.currentTime;
+                    const samplesFor30Seconds = this.WAV_SAMPLE_RATE * 30;
+
+                    // Check for silence
+                    if (audioLevel < this.SILENCE_THRESHOLD) {
+                        if (this.silenceStartTime === 0) {
+                            this.silenceStartTime = currentTime;
+                        } else if (currentTime - this.silenceStartTime >= this.MIN_SILENCE_DURATION) {
+                            if (this.totalSamples >= this.WAV_SAMPLE_RATE) { // At least 1 second of audio
+                                console.log('Silence detected, processing chunk...');
+                                this.processCurrentChunk();
+                                this.silenceStartTime = 0;
+                            }
+                        }
+                    } else {
+                        this.silenceStartTime = 0;
+                    }
+
+                    // Process chunk if we have accumulated 30 seconds of audio
+                    if (this.totalSamples >= samplesFor30Seconds) {
+                        console.log('30-second duration reached, processing chunk...');
+                        this.processCurrentChunk();
+                        this.totalSamples = this.totalSamples % samplesFor30Seconds; // Keep track of remaining samples
+                    }
+
+                    this.lastAudioLevel = audioLevel;
+                }
+            };
+            
+            source.connect(processor);
+            processor.connect(this.audioContext.destination);
+            
+            this.isRecording = true;
+            this.recordButton.textContent = 'Stop Recording';
+            this.recordingStatus.textContent = 'Recording in progress...';
+            this.recordingStatus.classList.add('text-red-500');
+
+        } catch (error) {
+            console.error('Error starting recording:', error);
+            this.showError('Could not start recording. Please check microphone permissions.');
+        }
+    }
+
+    async stopRecording() {
+        if (!this.isRecording) return;
+        
+        console.log('Stopping recording...');
+        this.isRecording = false;
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+        }
+
+        // Process any remaining audio only if it's substantial
+        if (this.audioChunks.length > 0) {
+            await this.processCurrentChunk();
+        }
+
+        // Clear the transcription queue and reset processing state
+        this.transcriptionQueue = [];
+        this.isProcessingQueue = false;
+        this.audioChunks = [];
+        this.processingChunks = [];
+        this.totalSamples = 0;
+
+        this.recordButton.textContent = 'Start Recording';
+        this.recordingStatus.textContent = 'Recording stopped.';
+        this.recordingStatus.classList.remove('text-red-500');
+    }
+
+    async processNextInQueue() {
+        if (this.transcriptionQueue.length === 0 || !this.isRecording) {
+            this.isProcessingQueue = false;
+            return;
+        }
+
+        this.isProcessingQueue = true;
+        const wavBlob = this.transcriptionQueue.shift();
+
+        try {
+            const reader = new FileReader();
+            reader.readAsDataURL(wavBlob);
+            
+            reader.onloadend = async () => {
+                // If recording was stopped while processing, don't continue
+                if (!this.isRecording) {
+                    this.isProcessingQueue = false;
+                    this.transcriptionQueue = [];
+                    return;
+                }
+
+                const base64data = reader.result.split(',')[1];
+                
+                try {
+                    console.log('Sending audio chunk for transcription...');
+                    const response = await fetch('/transcribe/transcribe_audio/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCSRFToken()
+                        },
+                        body: JSON.stringify({
+                            audio: base64data,
+                            sample_rate: this.WAV_SAMPLE_RATE
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Transcription failed: ${await response.text()}`);
+                    }
+
+                    // Only process response if still recording
+                    if (this.isRecording) {
+                        const result = await response.json();
+                        console.log('Received transcription result:', result);
+                        
+                        if (result.success && result.text) {
+                            if (this.accumulatedText) {
+                                this.accumulatedText += ' ' + result.text;
+                            } else {
+                                this.accumulatedText = result.text;
+                            }
+                            this.transcriptionText.value = this.accumulatedText;
+                            this.transcriptionText.scrollTop = this.transcriptionText.scrollHeight;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Transcription error:', error);
+                    this.showError('Failed to transcribe audio chunk.');
+                }
+
+                // Only process next chunk if still recording
+                if (this.isRecording) {
+                    this.processNextInQueue();
+                } else {
+                    this.isProcessingQueue = false;
+                    this.transcriptionQueue = [];
+                }
+            };
+        } catch (error) {
+            console.error('Error processing audio:', error);
+            this.isProcessingQueue = false;
+        }
+    }
+
+    async createWavBlob(audioData) {
+        // Convert to 16-bit PCM
+        const pcmData = new Int16Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+            const s = Math.max(-1, Math.min(1, audioData[i]));
+            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        // Create WAV header
+        const wavHeader = new ArrayBuffer(44);
+        const view = new DataView(wavHeader);
+        
+        // "RIFF" chunk descriptor
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + pcmData.length * 2, true);
+        writeString(view, 8, 'WAVE');
+        
+        // "fmt " sub-chunk
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, this.WAV_SAMPLE_RATE, true);
+        view.setUint32(28, this.WAV_SAMPLE_RATE * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        
+        // "data" sub-chunk
+        writeString(view, 36, 'data');
+        view.setUint32(40, pcmData.length * 2, true);
+
+        return new Blob([wavHeader, pcmData.buffer], { type: 'audio/wav' });
+    }
+
+    addToTranscriptionQueue(wavBlob) {
+        this.transcriptionQueue.push(wavBlob);
+        if (!this.isProcessingQueue) {
+            this.processNextInQueue();
+        }
+    }
+
+    showError(message) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+        setTimeout(() => {
+            errorDiv.classList.add('hidden');
+        }, 5000);
+    }
 }
 
+// Handle record button click
+async function handleRecordButtonClick() {
+    console.log('Record button clicked');
+    if (!transcriptionManager) {
+        console.error('Transcription manager not initialized');
+        return;
+    }
+
+    if (transcriptionManager.isRecording) {
+        await transcriptionManager.stopRecording();
+    } else {
+        await transcriptionManager.startRecording();
+    }
+}
+
+// Download buttons event listeners
 document.getElementById('downloadMarkdown').addEventListener('click', async () => {
-    const text = document.getElementById('transcriptionOutput').textContent;
+    const text = document.getElementById('transcriptionText').value;
+    if (!text) return;
+
     try {
         const response = await fetch('/transcribe/download/markdown/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
             },
             body: JSON.stringify({ text })
         });
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'transcription.md';
-        a.click();
-    } catch (err) {
-        console.error('Error downloading markdown:', err);
-        alert('Error downloading markdown. Please try again.');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcription.md';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    } catch (error) {
+        console.error('Error downloading markdown:', error);
     }
 });
 
 document.getElementById('downloadWord').addEventListener('click', async () => {
-    const text = document.getElementById('transcriptionOutput').textContent;
+    const text = document.getElementById('transcriptionText').value;
+    if (!text) return;
+
     try {
         const response = await fetch('/transcribe/download/word/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
             },
             body: JSON.stringify({ text })
         });
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'transcription.docx';
-        a.click();
-    } catch (err) {
-        console.error('Error downloading word document:', err);
-        alert('Error downloading word document. Please try again.');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcription.docx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+    } catch (error) {
+        console.error('Error downloading word document:', error);
     }
 });
+
+// Helper function to write string to DataView
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
 </script>
 {% endblock %}

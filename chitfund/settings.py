@@ -12,40 +12,26 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 
 from pathlib import Path
-import environ
-
-env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
-)
-
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file
+env_path = os.path.join(Path(__file__).resolve().parent, '.env')
+print(f"Loading .env from: {env_path}")
+load_dotenv(env_path)
+print("Environment loaded")
 
-# Take environment variables from .env file
-READ_DOT_ENV_FILE = env.bool('READ_DOT_ENV_FILE', default=False)
-if READ_DOT_ENV_FILE:
-    environ.Env.read_env()
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-# False if not in os.environ because of casting above
-DEBUG = env('DEBUG')
-
-# Raises Django's ImproperlyConfigured
-# exception if SECRET_KEY not in os.environ
-SECRET_KEY = env('SECRET_KEY')
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-# We are going to save the key in envirnment
-# for this we will use the django envirno package
-# SECRET_KEY = 'django-insecure-m&d+s_gv)pb42+q)sivkve1-%$gld6t4xzl%+nok8r-icstsqe'
-
-# # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
 
 #ALLOWED_HOSTS = ['www.eneru.co.in']
 
@@ -110,34 +96,23 @@ WSGI_APPLICATION = 'chitfund.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+#  
 
-# for postgresql functionality
 DATABASES = {
     'default': {
-        ####### This for production case ####################
-        # 'ENGINE': 'django.db.backends.mysql',
-        # 'NAME': env("DB_USER")+"$"+env("DB_NAME"),#'<your_username>$<your_database_name>',
-        # 'USER': env("DB_USER"),#'<your_username>',
-        # 'PASSWORD': env("DB_PASSWORD"),#'<your_mysql_password>',
-        # 'HOST': env("DB_HOST"),#'<your_mysql_hostname>',
-        # 'OPTIONS': {
-        #     'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-        #     }
-        ######## This is for development phase ############
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env("DB_NAME"),#'chitfund',
-        'USER': env("DB_USER"),#'postgres',
-        'PASSWORD': env("DB_PASSWORD"),#'Onepiece@28',
-        'HOST': env("DB_HOST"),#'localhost',
-        'PORT': env("DB_PORT"),#'5432',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'client_encoding': 'UTF8',
+            'connect_timeout': 10,
+        },
     }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -201,16 +176,15 @@ AUTH_USER_MODEL = 'client.User'
 
 
 # Sending emails through Django
-EMAIL_BACKEND = env('EMAIL_BACKEND')
-EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_USE_TLS = env('EMAIL_USE_TLS')
-EMAIL_PORT = env('EMAIL_PORT')
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 # Development Mail
 #EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 
 # whe the user loggs in he is redirected to this url below
 #LOGIN_REDIRECT_URL = "/client"
@@ -230,10 +204,10 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 
 
 ###### Gemini API KEY
-GEMINI_API_KEY = env("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Load Together API Key
-TOGETHER_API_KEY = env('TOGETHER_API_KEY')
+TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY')
 
 # have to learn the below command
 if not DEBUG:
@@ -249,9 +223,9 @@ if not DEBUG:
     X_FRAME_OPTIONS = "DENY"
 
     ALLOWED_HOSTS = ['www.eneru.co.in'] # THIS NEEDS TO BE CHNAGED WHEN DOMAIN IS KNOWN
-    EMAIL_BACKEND = env('EMAIL_BACKEND')
-    EMAIL_HOST = env('EMAIL_HOST')
-    EMAIL_USE_TLS = env('EMAIL_USE_TLS')
-    EMAIL_PORT = env('EMAIL_PORT')
-    EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+    EMAIL_HOST = os.getenv('EMAIL_HOST')
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS') == 'True'
+    EMAIL_PORT = os.getenv('EMAIL_PORT')
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')

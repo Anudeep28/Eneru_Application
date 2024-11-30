@@ -270,7 +270,7 @@ class nameGen:
                              n_embd=n_embd, n_embd2=n_embd2)
 
         self.model = Transformer(config)
-        self.model.load_state_dict(torch.load(self.model_file,map_location=torch.device(self.device)))
+        self.model.load_state_dict(torch.load(self.model_file,map_location=torch.device(self.device), weights_only=True))
 
         # -1 because we already start with <START> token (index 0)
 
