@@ -83,7 +83,6 @@ def initialize_transcriber():
                 tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids('<pad>')
             
             # Create pipeline with proper configuration
-            # Create pipeline with proper configuration
             transcriber = pipeline(
                 "automatic-speech-recognition",
                 model=model,
@@ -212,33 +211,42 @@ def index(request):
 
 @csrf_exempt
 def transcribe_audio(request):
+    """Handle audio transcription requests."""
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            audio_data = data.get('audio', '')
-            sample_rate = data.get('sample_rate', 16000)
+            # Check if this is a reinitialization request (application/json)
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                if data.get('action') == 'reinitialize':
+                    global transcriber, model, feature_extractor, tokenizer
+                    transcriber = None
+                    model = None
+                    feature_extractor = None
+                    tokenizer = None
+                    success = initialize_transcriber()
+                    return JsonResponse({'status': 'success' if success else 'error'})
+
+            # Handle audio file upload (multipart/form-data)
+            audio_file = request.FILES.get('audio')
+            is_final_chunk = request.POST.get('is_final_chunk', 'false').lower() == 'true'
             
-            logging.info(f"Received audio data, length: {len(audio_data)}")
+            logging.info(f"Received audio file, size: {audio_file.size if audio_file else 'No file'}")
             
-            if not audio_data:
+            if not audio_file:
                 return JsonResponse({
                     'success': False,
-                    'error': 'No audio data provided'
+                    'error': 'No audio file provided'
                 }, status=400)
 
             try:
-                # Remove data URL prefix if present
-                if ',' in audio_data:
-                    audio_data = audio_data.split(',')[1]
-                
-                # Decode base64 to binary
-                audio_binary = base64.b64decode(audio_data)
+                # Read audio file binary data
+                audio_binary = audio_file.read()
                 
                 # Process audio data
-                transcribed_text = process_audio_data(audio_binary, sample_rate)
+                transcribed_text = process_audio_data(audio_binary, 16000)
                 
                 # Optional: Process with Gemini for corrections
-                corrected_text = process_with_gemini(transcribed_text)
+                corrected_text = process_with_gemini(transcribed_text) if is_final_chunk else transcribed_text
                 
                 logging.info(f"Final transcription: {corrected_text}")
                 
@@ -254,12 +262,9 @@ def transcribe_audio(request):
                     'error': f'Error processing audio: {str(e)}'
                 }, status=500)
                 
-        except json.JSONDecodeError as e:
-            logging.error(f"JSON decode error: {str(e)}")
-            return JsonResponse({
-                'success': False,
-                'error': 'Invalid JSON data'
-            }, status=400)
+        except Exception as e:
+            logger.error(f"Error in transcribe_audio: {e}\n{traceback.format_exc()}")
+            return JsonResponse({'error': str(e)}, status=500)
             
     return JsonResponse({
         'success': False,

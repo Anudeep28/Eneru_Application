@@ -61,6 +61,16 @@
                     onclick="handleRecordButtonClick()">
                 Start Recording
             </button>
+            <button id="resumeButton" 
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden"
+                    onclick="handleResumeButtonClick()">
+                Resume Recording
+            </button>
+            <button id="clearButton" 
+                    class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline hidden"
+                    onclick="handleClearButtonClick()">
+                Clear
+            </button>
         </div>
         
         <!-- Recording Status -->
@@ -123,8 +133,10 @@ class AudioTranscriptionManager {
         console.log('Constructing AudioTranscriptionManager');
         this.WAV_SAMPLE_RATE = 16000;
         this.CHUNK_DURATION = 30; // 30 seconds chunk
-        this.SILENCE_THRESHOLD = 0.01; // Threshold for silence detection
+        this.SILENCE_THRESHOLD = 0.005; // Reduced threshold for silence detection
         this.MIN_SILENCE_DURATION = 1; // Minimum silence duration in seconds to trigger chunk processing
+        this.AUTO_STOP_SILENCE_DURATION = 1; // Duration of silence before auto-stop
+        this.MIN_RECORDING_DURATION = 2; // Minimum recording duration before allowing auto-stop
         
         this.audioContext = null;
         this.mediaRecorder = null;
@@ -134,94 +146,41 @@ class AudioTranscriptionManager {
         this.isRecording = false;
         this.isProcessing = false;
         this.accumulatedText = '';
+        this.temporaryText = ''; // Store text between pauses
         this.transcriptionQueue = [];
         this.isProcessingQueue = false;
         this.chunkStartTime = 0;
         this.lastAudioLevel = 0;
         this.silenceStartTime = 0;
         this.totalSamples = 0;
+        this.autoStopTimeout = null;
+        this.isAutoStopped = false;
+        this.recordingStartTime = 0;
+        this.consecutiveSilenceCount = 0;
+        this.processor = null;
+        this.source = null;
 
         // Initialize UI elements
         this.recordButton = document.getElementById('recordButton');
+        this.resumeButton = document.getElementById('resumeButton');
         this.transcriptionText = document.getElementById('transcriptionText');
         this.recordingStatus = document.getElementById('recordingStatus');
+        this.downloadMarkdown = document.getElementById('downloadMarkdown');
+        this.downloadWord = document.getElementById('downloadWord');
+        this.clearButton = document.getElementById('clearButton');
         
-        // Initialize audio context with specific sample rate
+        // Bind methods
+        this.processNextInQueue = this.processNextInQueue.bind(this);
+        this.handleSilence = this.handleSilence.bind(this);
+    }
+
+    async initializeAudioContext() {
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            await this.audioContext.close();
+        }
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
             sampleRate: this.WAV_SAMPLE_RATE
         });
-
-        // Bind methods
-        this.processNextInQueue = this.processNextInQueue.bind(this);
-    }
-
-    async processCurrentChunk() {
-        if (this.audioChunks.length === 0) return;
-
-        try {
-            // Calculate total samples needed for 30 seconds
-            const samplesNeeded = this.WAV_SAMPLE_RATE * 30;
-            
-            // Create a copy of the chunks for processing
-            this.processingChunks = [...this.audioChunks];
-            
-            // Calculate total length
-            const totalLength = this.processingChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-            
-            // If we have more than 30 seconds worth of audio, we'll process multiple chunks
-            while (this.processingChunks.length > 0) {
-                let currentChunkLength = 0;
-                let chunksToProcess = [];
-                
-                // Collect chunks until we have 30 seconds or run out of chunks
-                while (currentChunkLength < samplesNeeded && this.processingChunks.length > 0) {
-                    const chunk = this.processingChunks.shift();
-                    chunksToProcess.push(chunk);
-                    currentChunkLength += chunk.length;
-                }
-                
-                // Concatenate the chunks we're going to process
-                const concatenated = new Float32Array(currentChunkLength);
-                let offset = 0;
-                for (const chunk of chunksToProcess) {
-                    concatenated.set(chunk, offset);
-                    offset += chunk.length;
-                }
-                
-                // Pad or trim to exactly 30 seconds
-                let processedAudio;
-                if (concatenated.length < samplesNeeded) {
-                    // Pad with silence if less than 30 seconds
-                    processedAudio = new Float32Array(samplesNeeded);
-                    processedAudio.set(concatenated, 0);
-                } else {
-                    // Take exactly 30 seconds
-                    processedAudio = concatenated.slice(0, samplesNeeded);
-                    
-                    // If we have remaining samples, put them back at the start of processingChunks
-                    if (concatenated.length > samplesNeeded) {
-                        this.processingChunks.unshift(concatenated.slice(samplesNeeded));
-                    }
-                }
-
-                // Convert to WAV and add to queue
-                const wavBlob = await this.createWavBlob(processedAudio);
-                this.addToTranscriptionQueue(wavBlob);
-            }
-            
-            // Clear processed chunks from the main audioChunks array
-            const remainingSamples = totalLength % samplesNeeded;
-            if (remainingSamples > 0) {
-                // Keep only the remainder that wasn't processed
-                this.audioChunks = [this.audioChunks[this.audioChunks.length - 1].slice(-remainingSamples)];
-            } else {
-                this.audioChunks = [];
-            }
-
-        } catch (error) {
-            console.error('Error processing audio chunks:', error);
-            this.showError('Error processing audio. Please try again.');
-        }
     }
 
     async startRecording() {
@@ -232,9 +191,12 @@ class AudioTranscriptionManager {
                 return;
             }
 
+            // Initialize audio context
+            await this.initializeAudioContext();
+
             // Reset recording state
             this.accumulatedText = '';
-            this.transcriptionText.value = '';
+            this.transcriptionText.value = this.temporaryText; // Show any previous text
             this.transcriptionQueue = [];
             this.isProcessingQueue = false;
             this.audioChunks = [];
@@ -243,6 +205,16 @@ class AudioTranscriptionManager {
             this.silenceStartTime = 0;
             this.lastAudioLevel = 0;
             this.totalSamples = 0;
+            this.isAutoStopped = false;
+            this.recordingStartTime = Date.now();
+            this.consecutiveSilenceCount = 0;
+
+            // Reset UI
+            this.resumeButton.classList.add('hidden');
+            this.downloadMarkdown.disabled = true;
+            this.downloadWord.disabled = true;
+            this.downloadMarkdown.classList.add('opacity-50', 'cursor-not-allowed');
+            this.downloadWord.classList.add('opacity-50', 'cursor-not-allowed');
 
             // Request microphone access with specific constraints
             this.currentStream = await navigator.mediaDevices.getUserMedia({ 
@@ -256,10 +228,10 @@ class AudioTranscriptionManager {
             });
             
             // Create audio processing pipeline
-            const source = this.audioContext.createMediaStreamSource(this.currentStream);
-            const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+            this.source = this.audioContext.createMediaStreamSource(this.currentStream);
+            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
             
-            processor.onaudioprocess = (e) => {
+            this.processor.onaudioprocess = (e) => {
                 if (this.isRecording) {
                     const inputData = e.inputBuffer.getChannelData(0);
                     this.audioChunks.push(new Float32Array(inputData));
@@ -270,35 +242,40 @@ class AudioTranscriptionManager {
                     
                     const currentTime = this.audioContext.currentTime;
                     const samplesFor30Seconds = this.WAV_SAMPLE_RATE * 30;
+                    const recordingDuration = (Date.now() - this.recordingStartTime) / 1000;
 
-                    // Check for silence
-                    if (audioLevel < this.SILENCE_THRESHOLD) {
-                        if (this.silenceStartTime === 0) {
-                            this.silenceStartTime = currentTime;
-                        } else if (currentTime - this.silenceStartTime >= this.MIN_SILENCE_DURATION) {
-                            if (this.totalSamples >= this.WAV_SAMPLE_RATE) { // At least 1 second of audio
-                                console.log('Silence detected, processing chunk...');
-                                this.processCurrentChunk();
-                                this.silenceStartTime = 0;
+                    // Only check for silence after minimum recording duration
+                    if (recordingDuration >= this.MIN_RECORDING_DURATION) {
+                        // Check for silence
+                        if (audioLevel < this.SILENCE_THRESHOLD) {
+                            this.consecutiveSilenceCount++;
+                            if (this.silenceStartTime === 0) {
+                                this.silenceStartTime = currentTime;
+                                this.handleSilence();
+                            }
+                        } else {
+                            this.consecutiveSilenceCount = 0;
+                            this.silenceStartTime = 0;
+                            if (this.autoStopTimeout) {
+                                clearTimeout(this.autoStopTimeout);
+                                this.autoStopTimeout = null;
                             }
                         }
-                    } else {
-                        this.silenceStartTime = 0;
                     }
 
                     // Process chunk if we have accumulated 30 seconds of audio
                     if (this.totalSamples >= samplesFor30Seconds) {
                         console.log('30-second duration reached, processing chunk...');
                         this.processCurrentChunk();
-                        this.totalSamples = this.totalSamples % samplesFor30Seconds; // Keep track of remaining samples
+                        this.totalSamples = this.totalSamples % samplesFor30Seconds;
                     }
 
                     this.lastAudioLevel = audioLevel;
                 }
             };
             
-            source.connect(processor);
-            processor.connect(this.audioContext.destination);
+            this.source.connect(this.processor);
+            this.processor.connect(this.audioContext.destination);
             
             this.isRecording = true;
             this.recordButton.textContent = 'Stop Recording';
@@ -311,108 +288,167 @@ class AudioTranscriptionManager {
         }
     }
 
-    async stopRecording() {
-        if (!this.isRecording) return;
-        
-        console.log('Stopping recording...');
-        this.isRecording = false;
-        if (this.currentStream) {
-            this.currentStream.getTracks().forEach(track => track.stop());
+    handleSilence() {
+        if (this.autoStopTimeout) {
+            clearTimeout(this.autoStopTimeout);
         }
 
-        // Process any remaining audio only if it's substantial
-        if (this.audioChunks.length > 0) {
-            await this.processCurrentChunk();
+        // Only auto-stop if we have enough consecutive silence frames
+        if (this.consecutiveSilenceCount >= 10) { // About 0.5 seconds of consecutive silence
+            this.autoStopTimeout = setTimeout(async () => {
+                if (this.isRecording && !this.isAutoStopped) {
+                    console.log('Auto-stopping due to silence');
+                    this.isAutoStopped = true;
+                    
+                    // Process any remaining audio
+                    if (this.audioChunks.length > 0) {
+                        await this.processCurrentChunk(true);
+                    }
+
+                    // Store current text temporarily
+                    this.temporaryText = this.transcriptionText.value;
+                    
+                    // Stop recording but keep the text
+                    await this.stopRecording(true);
+                    
+                    // Show resume button
+                    this.resumeButton.classList.remove('hidden');
+                    this.recordButton.classList.add('hidden');
+                    this.recordingStatus.textContent = 'Recording paused due to silence. Click Resume to continue.';
+                    this.recordingStatus.classList.remove('text-red-500');
+                }
+            }, this.AUTO_STOP_SILENCE_DURATION * 1000);
         }
-
-        // Clear the transcription queue and reset processing state
-        this.transcriptionQueue = [];
-        this.isProcessingQueue = false;
-        this.audioChunks = [];
-        this.processingChunks = [];
-        this.totalSamples = 0;
-
-        this.recordButton.textContent = 'Start Recording';
-        this.recordingStatus.textContent = 'Recording stopped.';
-        this.recordingStatus.classList.remove('text-red-500');
     }
 
-    async processNextInQueue() {
-        if (this.transcriptionQueue.length === 0 || !this.isRecording) {
-            this.isProcessingQueue = false;
+    async stopRecording(isAutoStop = false) {
+        console.log('Stopping recording...');
+        if (!this.isRecording) {
+            console.warn('Not recording');
             return;
         }
 
-        this.isProcessingQueue = true;
-        const wavBlob = this.transcriptionQueue.shift();
-
         try {
-            const reader = new FileReader();
-            reader.readAsDataURL(wavBlob);
-            
-            reader.onloadend = async () => {
-                // If recording was stopped while processing, don't continue
-                if (!this.isRecording) {
-                    this.isProcessingQueue = false;
-                    this.transcriptionQueue = [];
-                    return;
-                }
+            // Process any remaining audio immediately
+            if (this.audioChunks.length > 0) {
+                console.log('Processing remaining audio chunks before stopping...');
+                await this.processCurrentChunk(true); // Pass true to indicate final chunk
+            }
 
-                const base64data = reader.result.split(',')[1];
-                
-                try {
-                    console.log('Sending audio chunk for transcription...');
-                    const response = await fetch('/transcribe/transcribe_audio/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCSRFToken()
-                        },
-                        body: JSON.stringify({
-                            audio: base64data,
-                            sample_rate: this.WAV_SAMPLE_RATE
-                        })
-                    });
+            // Clean up recording state
+            this.isRecording = false;
+            if (this.currentStream) {
+                this.currentStream.getTracks().forEach(track => track.stop());
+            }
+            this.currentStream = null;
 
-                    if (!response.ok) {
-                        throw new Error(`Transcription failed: ${await response.text()}`);
-                    }
+            // Update UI based on stop type
+            if (!isAutoStop) {
+                this.recordButton.textContent = 'Start Recording';
+                this.recordingStatus.textContent = 'Recording stopped.';
+                this.recordingStatus.classList.remove('text-red-500');
+                this.downloadMarkdown.disabled = false;
+                this.downloadWord.disabled = false;
+                this.downloadMarkdown.classList.remove('opacity-50', 'cursor-not-allowed');
+                this.downloadWord.classList.remove('opacity-50', 'cursor-not-allowed');
+                this.resumeButton.classList.add('hidden');
+                this.recordButton.classList.remove('hidden');
+                this.clearButton.classList.remove('hidden');
+            }
 
-                    // Only process response if still recording
-                    if (this.isRecording) {
-                        const result = await response.json();
-                        console.log('Received transcription result:', result);
-                        
-                        if (result.success && result.text) {
-                            if (this.accumulatedText) {
-                                this.accumulatedText += ' ' + result.text;
-                            } else {
-                                this.accumulatedText = result.text;
-                            }
-                            this.transcriptionText.value = this.accumulatedText;
-                            this.transcriptionText.scrollTop = this.transcriptionText.scrollHeight;
-                        }
-                    }
-                } catch (error) {
-                    console.error('Transcription error:', error);
-                    this.showError('Failed to transcribe audio chunk.');
-                }
-
-                // Only process next chunk if still recording
-                if (this.isRecording) {
-                    this.processNextInQueue();
-                } else {
-                    this.isProcessingQueue = false;
-                    this.transcriptionQueue = [];
-                }
-            };
         } catch (error) {
-            console.error('Error processing audio:', error);
-            this.isProcessingQueue = false;
+            console.error('Error stopping recording:', error);
+            this.showError('Error stopping recording');
         }
     }
 
-    async createWavBlob(audioData) {
+    async processCurrentChunk(isFinalChunk = false) {
+        if (!this.audioChunks.length) return;
+
+        console.log('Processing audio chunk...');
+        const currentChunks = [...this.audioChunks];
+        this.audioChunks = []; // Reset for next chunk
+        this.totalSamples = 0;
+        this.chunkStartTime = this.audioContext.currentTime;
+
+        try {
+            // Combine all audio chunks into a single buffer
+            const totalLength = currentChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const combinedBuffer = new Float32Array(totalLength);
+            let offset = 0;
+            for (const chunk of currentChunks) {
+                combinedBuffer.set(chunk, offset);
+                offset += chunk.length;
+            }
+
+            // Create WAV file
+            const wavBuffer = this.createWAVFile(combinedBuffer);
+            const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+
+            // Add to processing queue
+            this.transcriptionQueue.push({
+                blob: wavBlob,
+                isFinalChunk: isFinalChunk
+            });
+
+            // Start processing if not already processing
+            if (!this.isProcessingQueue) {
+                await this.processNextInQueue();
+            }
+
+        } catch (error) {
+            console.error('Error processing audio chunk:', error);
+            this.showError('Error processing audio');
+        }
+    }
+
+    async processNextInQueue() {
+        if (this.isProcessingQueue || this.transcriptionQueue.length === 0) return;
+
+        this.isProcessingQueue = true;
+        const { blob, isFinalChunk } = this.transcriptionQueue.shift();
+
+        try {
+            const formData = new FormData();
+            formData.append('audio', blob, 'recording.wav');
+            formData.append('is_final_chunk', isFinalChunk);
+
+            const response = await fetch('/transcribe/transcribe_audio/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': this.getCsrfToken()
+                }
+            });
+
+            if (!response.ok) throw new Error('Transcription failed');
+
+            const result = await response.json();
+            if (result.text) {
+                if (isFinalChunk) {
+                    // For final chunk, append to accumulated text and update display
+                    this.accumulatedText += ' ' + result.text;
+                    this.transcriptionText.value = this.accumulatedText.trim();
+                } else {
+                    // For regular chunks during recording
+                    this.accumulatedText += ' ' + result.text;
+                    this.transcriptionText.value = this.accumulatedText.trim();
+                }
+            }
+
+        } catch (error) {
+            console.error('Error in transcription:', error);
+            this.showError('Transcription failed');
+        } finally {
+            this.isProcessingQueue = false;
+            // Process next chunk if any
+            if (this.transcriptionQueue.length > 0) {
+                await this.processNextInQueue();
+            }
+        }
+    }
+
+    createWAVFile(audioData) {
         // Convert to 16-bit PCM
         const pcmData = new Int16Array(audioData.length);
         for (let i = 0; i < audioData.length; i++) {
@@ -423,6 +459,12 @@ class AudioTranscriptionManager {
         // Create WAV header
         const wavHeader = new ArrayBuffer(44);
         const view = new DataView(wavHeader);
+        
+        const writeString = (view, offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
         
         // "RIFF" chunk descriptor
         writeString(view, 0, 'RIFF');
@@ -443,7 +485,159 @@ class AudioTranscriptionManager {
         writeString(view, 36, 'data');
         view.setUint32(40, pcmData.length * 2, true);
 
-        return new Blob([wavHeader, pcmData.buffer], { type: 'audio/wav' });
+        // Combine header and data
+        const wavArray = new Uint8Array(wavHeader.byteLength + pcmData.length * 2);
+        wavArray.set(new Uint8Array(wavHeader), 0);
+        wavArray.set(new Uint8Array(pcmData.buffer), wavHeader.byteLength);
+        
+        return wavArray;
+    }
+
+    async resumeRecording() {
+        try {
+            console.log('Resuming recording...');
+            if (this.isRecording) {
+                console.warn('Already recording');
+                return;
+            }
+
+            // Request microphone access with specific constraints
+            this.currentStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    sampleRate: this.WAV_SAMPLE_RATE,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            // Create audio processing pipeline
+            this.source = this.audioContext.createMediaStreamSource(this.currentStream);
+            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+            
+            this.processor.onaudioprocess = (e) => {
+                if (this.isRecording) {
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    this.audioChunks.push(new Float32Array(inputData));
+                    this.totalSamples += inputData.length;
+                    
+                    // Calculate current audio level
+                    const audioLevel = Math.sqrt(inputData.reduce((acc, val) => acc + val * val, 0) / inputData.length);
+                    
+                    const currentTime = this.audioContext.currentTime;
+                    const samplesFor30Seconds = this.WAV_SAMPLE_RATE * 30;
+                    const recordingDuration = (Date.now() - this.recordingStartTime) / 1000;
+
+                    // Only check for silence after minimum recording duration
+                    if (recordingDuration >= this.MIN_RECORDING_DURATION) {
+                        // Check for silence
+                        if (audioLevel < this.SILENCE_THRESHOLD) {
+                            this.consecutiveSilenceCount++;
+                            if (this.silenceStartTime === 0) {
+                                this.silenceStartTime = currentTime;
+                                this.handleSilence();
+                            }
+                        } else {
+                            this.consecutiveSilenceCount = 0;
+                            this.silenceStartTime = 0;
+                            if (this.autoStopTimeout) {
+                                clearTimeout(this.autoStopTimeout);
+                                this.autoStopTimeout = null;
+                            }
+                        }
+                    }
+
+                    // Process chunk if we have accumulated 30 seconds of audio
+                    if (this.totalSamples >= samplesFor30Seconds) {
+                        console.log('30-second duration reached, processing chunk...');
+                        this.processCurrentChunk();
+                        this.totalSamples = this.totalSamples % samplesFor30Seconds;
+                    }
+
+                    this.lastAudioLevel = audioLevel;
+                }
+            };
+            
+            this.source.connect(this.processor);
+            this.processor.connect(this.audioContext.destination);
+            
+            this.isRecording = true;
+            this.resumeButton.classList.add('hidden');
+            this.recordButton.classList.remove('hidden');
+            this.recordButton.textContent = 'Stop Recording';
+            this.recordingStatus.textContent = 'Recording in progress...';
+            this.recordingStatus.classList.add('text-red-500');
+
+        } catch (error) {
+            console.error('Error resuming recording:', error);
+            this.showError('Could not resume recording. Please check microphone permissions.');
+        }
+    }
+
+    async clearAll() {
+        try {
+            console.log('Clearing all data...');
+            
+            // Stop any ongoing recording
+            if (this.isRecording) {
+                await this.stopRecording();
+            }
+
+            // Clean up audio context and processing nodes
+            if (this.source) {
+                this.source.disconnect();
+                this.source = null;
+            }
+            if (this.processor) {
+                this.processor.disconnect();
+                this.processor = null;
+            }
+            if (this.audioContext) {
+                await this.audioContext.close();
+                this.audioContext = null;
+            }
+            if (this.currentStream) {
+                this.currentStream.getTracks().forEach(track => track.stop());
+                this.currentStream = null;
+            }
+            
+            // Clear text and audio data
+            this.accumulatedText = '';
+            this.temporaryText = '';
+            this.transcriptionText.value = '';
+            this.audioChunks = [];
+            this.processingChunks = [];
+            this.transcriptionQueue = [];
+            this.isRecording = false;
+            this.isProcessing = false;
+            this.isProcessingQueue = false;
+            
+            // Reset UI
+            this.recordingStatus.textContent = 'Click \'Start Recording\' to begin';
+            this.clearButton.classList.add('hidden');
+            this.resumeButton.classList.add('hidden');
+            this.downloadMarkdown.disabled = true;
+            this.downloadWord.disabled = true;
+            this.downloadMarkdown.classList.add('opacity-50', 'cursor-not-allowed');
+            this.downloadWord.classList.add('opacity-50', 'cursor-not-allowed');
+            this.recordButton.textContent = 'Start Recording';
+            
+            // Re-initialize transcriber on the server
+            await fetch('/transcribe_app/transcribe/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'reinitialize' })
+            });
+            
+            console.log('All data cleared successfully');
+        } catch (error) {
+            console.error('Error clearing data:', error);
+            this.showError('Failed to clear data');
+        }
     }
 
     addToTranscriptionQueue(wavBlob) {
@@ -454,89 +648,60 @@ class AudioTranscriptionManager {
     }
 
     showError(message) {
-        const errorDiv = document.getElementById('errorMessage');
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('hidden');
-        setTimeout(() => {
-            errorDiv.classList.add('hidden');
-        }, 5000);
-    }
-}
-
-// Handle record button click
-async function handleRecordButtonClick() {
-    console.log('Record button clicked');
-    if (!transcriptionManager) {
-        console.error('Transcription manager not initialized');
-        return;
+        console.error(message);
+        this.recordingStatus.textContent = message;
+        this.recordingStatus.classList.add('text-red-500');
     }
 
-    if (transcriptionManager.isRecording) {
-        await transcriptionManager.stopRecording();
-    } else {
-        await transcriptionManager.startRecording();
+    getCsrfToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]').value;
     }
-}
 
-// Download buttons event listeners
-document.getElementById('downloadMarkdown').addEventListener('click', async () => {
-    const text = document.getElementById('transcriptionText').value;
-    if (!text) return;
-
-    try {
-        const response = await fetch('/transcribe/download/markdown/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken(),
-            },
-            body: JSON.stringify({ text })
-        });
-        
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'transcription.md';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+    downloadTranscription(format) {
+        const text = this.transcriptionText.value;
+        if (!text) {
+            this.showError('No transcription to download');
+            return;
         }
-    } catch (error) {
-        console.error('Error downloading markdown:', error);
+
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transcription.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+}
+
+// Initialize the audio transcription manager
+const audioManager = new AudioTranscriptionManager();
+
+// Add event listeners
+document.getElementById('recordButton').addEventListener('click', async () => {
+    if (!audioManager.isRecording) {
+        await audioManager.startRecording();
+    } else {
+        await audioManager.stopRecording();
     }
 });
 
-document.getElementById('downloadWord').addEventListener('click', async () => {
-    const text = document.getElementById('transcriptionText').value;
-    if (!text) return;
+document.getElementById('resumeButton').addEventListener('click', async () => {
+    await audioManager.resumeRecording();
+});
 
-    try {
-        const response = await fetch('/transcribe/download/word/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCSRFToken(),
-            },
-            body: JSON.stringify({ text })
-        });
-        
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'transcription.docx';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
-    } catch (error) {
-        console.error('Error downloading word document:', error);
-    }
+document.getElementById('downloadMarkdown').addEventListener('click', () => {
+    audioManager.downloadTranscription('md');
+});
+
+document.getElementById('downloadWord').addEventListener('click', () => {
+    audioManager.downloadTranscription('docx');
+});
+
+document.getElementById('clearButton').addEventListener('click', async () => {
+    await audioManager.clearAll();
 });
 
 // Helper function to write string to DataView
