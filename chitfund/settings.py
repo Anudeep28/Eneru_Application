@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'chatbot',
     'ocr_app',
     'transcribe_app',
+    'food_app',
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',

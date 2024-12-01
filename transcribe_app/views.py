@@ -18,6 +18,7 @@ from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 
 # Gemini imports
 import google.generativeai as genai
@@ -206,10 +207,13 @@ def process_audio_data(audio_data, sample_rate=16000):
         logging.error(f"Error in process_audio_data: {str(e)}", exc_info=True)
         raise
 
+@login_required
 def index(request):
+    """Render the main transcription page."""
     return render(request, 'transcribe_app/index.html')
 
 @csrf_exempt
+@login_required
 def transcribe_audio(request):
     """Handle audio transcription requests."""
     if request.method == 'POST':
@@ -271,8 +275,9 @@ def transcribe_audio(request):
         'error': 'Invalid request method'
     }, status=405)
 
-@csrf_exempt
+@login_required
 def download_markdown(request):
+    """Download transcription as markdown."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -291,8 +296,9 @@ def download_markdown(request):
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-@csrf_exempt
+@login_required
 def download_word(request):
+    """Download transcription as Word document."""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
