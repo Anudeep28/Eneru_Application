@@ -43,6 +43,16 @@ To set up the Eneru Application locally, follow these steps:
    python manage.py runserver
    ```
 
+## Model Files
+The food recognition model file (`indian_food_model_v3.pth`) is too large for GitHub. You can download it from:
+1. [Google Drive Link] - Coming soon
+2. Or contact the repository owner for access
+
+After downloading, place the model file in:
+```
+food_app/models/indian_food_model_v3.pth
+```
+
 ## Usage
 
 - Access the application by navigating to `http://127.0.0.1:8000` in your web browser.

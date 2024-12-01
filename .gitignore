@@ -160,5 +160,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# models
+# Model files
+food_app/models/*.pth
+food_app/models/*.pt
+food_app/models/*.ckpt
+food_app/models/*.bin
 food_app/models/indian_food_model_v3.pth
