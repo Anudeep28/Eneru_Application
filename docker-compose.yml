@@ -1,0 +1,41 @@
+services:
+  web:
+    build: .
+    command: python3 manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - ./chitfund/.env:/app/chitfund/.env
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-development-key
+      - DJANGO_SETTINGS_MODULE=chitfund.settings
+      - DB_NAME=eneru_db
+      - DB_USER=eneru_user
+      - DB_PASSWORD=eneru_password
+      - DB_HOST=db
+      - DB_PORT=5432
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=eneru_db
+      - POSTGRES_USER=eneru_user
+      - POSTGRES_PASSWORD=eneru_password
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:

@@ -33,7 +33,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-#ALLOWED_HOSTS = ['www.eneru.co.in']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
