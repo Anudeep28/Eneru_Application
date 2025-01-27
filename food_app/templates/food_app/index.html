@@ -150,11 +150,11 @@
             <div class="space-y-4">
                 <div class="flex items-center justify-between">
                     <span class="font-semibold">Detected Food:</span>
-                    <span class="text-indigo-600">${data.food_name}</span>
+                    <span class="text-indigo-600">${data.prediction}</span>
                 </div>
                 <div class="flex items-center justify-between">
                     <span class="font-semibold">Confidence:</span>
-                    <span>${(data.confidence * 100).toFixed(2)}%</span>
+                    <span>${data.confidence}</span>
                 </div>
             </div>
         `;

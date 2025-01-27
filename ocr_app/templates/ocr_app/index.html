@@ -60,42 +60,33 @@
                         <!-- Tabs -->
                         <div class="border-b border-gray-200">
                             <nav class="-mb-px flex space-x-8">
-                                <button class="tab-btn active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="markdown">
-                                    Markdown
-                                </button>
-                                <button class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="preview">
-                                    Preview
+                                <button class="tab-btn active border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="formatted">
+                                    Rendered Output
                                 </button>
                                 <button class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="raw">
-                                    Raw Text
+                                    Raw Output
                                 </button>
                             </nav>
                         </div>
 
                         <!-- Tab Contents -->
                         <div class="mt-4">
-                            <div id="markdown-content" class="tab-content">
-                                <div id="markdown-output" class="prose max-w-none"></div>
-                                <div class="mt-4 flex space-x-4">
-                                    <a id="download-markdown" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        <i class="fas fa-download mr-2"></i> Download Markdown
-                                    </a>
-                                    <a id="download-csv" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                        <i class="fas fa-file-csv mr-2"></i> Download CSV
-                                    </a>
-                                    <a id="download-excel" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                        <i class="fas fa-file-excel mr-2"></i> Download Excel
-                                    </a>
-                                </div>
-                            </div>
-                            <div id="markdown-preview" class="hidden mt-4">
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">Markdown Preview</h3>
-                                <div id="markdown-output" class="prose max-w-none"></div>
-                            </div>
-                            <div id="preview-content" class="tab-content hidden prose max-w-none">
+                            <div id="formatted-content" class="tab-content markdown-body prose max-w-none">
+                                <!-- Rendered markdown will go here -->
                             </div>
                             <div id="raw-content" class="tab-content hidden">
-                                <pre class="bg-gray-50 rounded-lg p-4 overflow-auto max-h-96 whitespace-pre-wrap text-sm"></pre>
+                                <pre class="bg-gray-50 p-4 rounded-lg overflow-x-auto whitespace-pre-wrap"></pre>
+                            </div>
+                            <div class="mt-4 flex space-x-4">
+                                <a id="download-json" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <i class="fas fa-download mr-2"></i> Download JSON
+                                </a>
+                                <a id="download-csv" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    <i class="fas fa-download mr-2"></i> Download CSV
+                                </a>
+                                <a id="download-excel" href="#" class="hidden inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <i class="fas fa-download mr-2"></i> Download Excel
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -131,7 +122,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 $(document).ready(function() {
     const fileInput = $('#file-upload');
@@ -142,12 +132,6 @@ $(document).ready(function() {
     const imagePreview = $('#image-preview');
     const previewImg = $('#preview-img');
     const form = $('#upload-form');
-
-    // Configure marked.js
-    marked.setOptions({
-        breaks: true,
-        gfm: true
-    });
 
     // File input change handler
     fileInput.on('change', function() {
@@ -195,31 +179,53 @@ $(document).ready(function() {
                     return;
                 }
                 
-                // Update markdown content
-                const markdownHtml = marked.parse(data.markdown_output);
-                $('#markdown-output').html(markdownHtml);
-                
-                // Update download links with the document ID
-                $('#download-markdown')
-                    .removeClass('hidden')
-                    .attr('href', `/ocr/download/markdown/${data.doc_id}/`);
+                try {
+                    // Parse the JSON string if needed
+                    const jsonData = typeof data === 'string' ? JSON.parse(data) : data;
                     
-                $('#download-csv')
-                    .removeClass('hidden')
-                    .attr('href', `/ocr/download/excel/${data.doc_id}/?format=csv`);
+                    // Update the views with the response data
+                    if (data.html_output) {
+                        console.log('HTML output:', data.html_output);
+                        $('#formatted-content').html(data.html_output);
+                    } else {
+                        console.log('No HTML output found');
+                        $('#formatted-content').html('<p class="text-red-500">No formatted output available</p>');
+                    }
                     
-                $('#download-excel')
-                    .removeClass('hidden')
-                    .attr('href', `/ocr/download/excel/${data.doc_id}/`);
-                
-                // Show results section
-                $('#results').removeClass('hidden');
+                    if (data.markdown_output) {
+                        console.log('Markdown output:', data.markdown_output);
+                        $('#raw-content pre').text(data.markdown_output);
+                    } else {
+                        console.log('No markdown output found');
+                        $('#raw-content pre').text('No raw output available');
+                    }
+                    
+                    // Update download links with proper URLs
+                    if (data.doc_id) {
+                        $('#download-json')
+                            .removeClass('hidden')
+                            .attr('href', `/ocr/download/markdown/${data.doc_id}/`);
+                            
+                        $('#download-csv')
+                            .removeClass('hidden')
+                            .attr('href', `/ocr/download/excel/${data.doc_id}/?format=csv`);
+                            
+                        $('#download-excel')
+                            .removeClass('hidden')
+                            .attr('href', `/ocr/download/excel/${data.doc_id}/`);
+                    }
+                    
+                    // Show results
+                    loading.addClass('hidden');
+                    results.removeClass('hidden');
+                } catch (e) {
+                    console.error('Error processing response:', e);
+                    showError('Error processing the server response');
+                }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
                 showError('An error occurred while processing the file.');
-            },
-            complete: function() {
                 loading.addClass('hidden');
             }
         });
@@ -230,10 +236,20 @@ $(document).ready(function() {
         fileInput.val('');
         fileInfo.addClass('hidden');
         imagePreview.addClass('hidden');
-        previewImg.attr('src', '');
         results.addClass('hidden');
     });
-
+    
+    // Tab switching
+    $('.tab-btn').on('click', function() {
+        const tab = $(this).data('tab');
+        $('.tab-btn').removeClass('active border-indigo-500 text-indigo-600')
+            .addClass('border-transparent text-gray-500');
+        $(this).addClass('active border-indigo-500 text-indigo-600')
+            .removeClass('border-transparent text-gray-500');
+        $('.tab-content').addClass('hidden');
+        $(`#${tab}-content`).removeClass('hidden');
+    });
+    
     function showError(message) {
         alert(message);
     }

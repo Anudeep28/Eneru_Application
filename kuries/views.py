@@ -3,14 +3,15 @@ from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 from client.models import ChitFund
 from .forms import chitfundModelForm
-from .mixins import ChitfundLoginRequiredMixin
+from client.mixins import KuriesAccessMixin
 from django.conf import settings
 from django.core.mail import send_mail
+
 # Create your views here.
 
 
 
-class chitfundlistview(ChitfundLoginRequiredMixin, generic.ListView):
+class chitfundlistview(KuriesAccessMixin, generic.ListView):
     template_name = "kuries/chitfund_list.html"
 
 
@@ -21,7 +22,7 @@ class chitfundlistview(ChitfundLoginRequiredMixin, generic.ListView):
         return ChitFund.objects.filter(owner=request_user_owner)
 
 
-class chitfundCreateview(ChitfundLoginRequiredMixin, generic.CreateView):
+class chitfundCreateview(KuriesAccessMixin, generic.CreateView):
     template_name = "kuries/chitfund_create.html"
     form_class = chitfundModelForm
 
@@ -42,35 +43,30 @@ class chitfundCreateview(ChitfundLoginRequiredMixin, generic.CreateView):
         )
         return super(chitfundCreateview, self).form_valid(form)
 
-class chitfundDetaiView(ChitfundLoginRequiredMixin, generic.DetailView):
+class chitfundDetaiView(KuriesAccessMixin, generic.DetailView):
     template_name = "kuries/chitfund_info.html"
     # sexond way of getting the query set
     def get_queryset(self):
         return ChitFund.objects.all()
 
 
-class chitfundUpdateView(ChitfundLoginRequiredMixin, generic.UpdateView):
+class chitfundUpdateView(KuriesAccessMixin, generic.UpdateView):
     template_name = 'kuries/chitfund_update.html'
     form_class = chitfundModelForm
+    context_object_name = "chitfund"
 
     def get_queryset(self):
         return ChitFund.objects.all()
 
-    context_object_name = "chitfund"
-    # when the form is saved successfully
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("kuries:chitfund-list")
 
-class chitfundDeleteView(ChitfundLoginRequiredMixin, generic.DeleteView):
+class chitfundDeleteView(KuriesAccessMixin, generic.DeleteView):
     template_name = 'kuries/chitfund_delete.html'
+    context_object_name = "chitfund"
 
     def get_queryset(self):
-        request_user_owner = self.request.user.userprofile
-        return ChitFund.objects.filter(owner=request_user_owner)
+        return ChitFund.objects.all()
 
-    context_object_name = "chitfund"
-    # when the form is saved successfully
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("kuries:chitfund-list")

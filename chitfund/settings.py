@@ -20,9 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 env_path = os.path.join(Path(__file__).resolve().parent, '.env')
-print(f"Loading .env from: {env_path}")
+# print(f"Loading .env from: {env_path}")
 load_dotenv(env_path)
-print("Environment loaded")
+# print("Environment loaded")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
@@ -61,6 +61,10 @@ INSTALLED_APPS = [
     # for static files
     'whitenoise.runserver_nostatic',
 ]
+
+# Crispy Forms Settings
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -200,8 +204,6 @@ LOGIN_URL = '/login'
 
 # You can set your default template pack for your project
 # using the CRISPY_TEMPLATE_PACK Django settings variable:
-CRISPY_TEMPLATE_PACK = 'tailwind'
-CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 
 
 ###### Gemini API KEY
@@ -209,7 +211,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Load Together API Key
 TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY')
-
+# TOGETHER_API_KEY = os.getenv('TOGETHER_API_KEY')
 # have to learn the below command
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO','hhtps')

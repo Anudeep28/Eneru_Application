@@ -2,17 +2,14 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.forms.models import BaseModelForm
 from django.core.mail import send_mail
-#from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse
 from .models import User, ChitFund, Client, Category
 from .forms import ClientForm, ChitfundUserForm, clientAssignForm, clientCategoryUpdateForm
-# class functions of django
 from django.views import generic
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from kuries.mixins import ChitfundLoginRequiredMixin
-from .mixins import ClientLoginRequiredMixin
+from .mixins import ClientLoginRequiredMixin, ChitfundAccessMixin
 from django.contrib.auth.decorators import login_required
 
 # Class based view
@@ -23,9 +20,28 @@ class ClientsignupView(generic.CreateView):
     template_name = 'registration/signup.html'
     form_class = ChitfundUserForm
 
-    # when the form is saved successfully
+    def form_valid(self, form):
+        # Get the selected apps from POST data
+        selected_apps = {
+            'app_chitfund': 'is_chitfund_user',
+            'app_namegen': 'is_namegen_user',
+            'app_food': 'is_food_app_user',
+            'app_ocr': 'is_ocr_app_user',
+            'app_transcribe': 'is_transcribe_app_user',
+            'app_chatbot': 'is_chatbot_user',
+            'app_kuries': 'is_kuries_user'
+        }
+        
+        # Set the user permissions based on selected apps
+        user = form.save(commit=False)
+        for app_name, field_name in selected_apps.items():
+            if self.request.POST.get(app_name):
+                setattr(user, field_name, True)
+        
+        user.save()
+        return super().form_valid(form)
+
     def get_success_url(self) -> str:
-        # same as redirect
         return reverse("login")
 
 
@@ -41,26 +57,16 @@ class ClientListView(ClientLoginRequiredMixin, generic.ListView):
 
         if user.is_chitfund_owner or user.is_chitfund_user:
             queryset = Client.objects.filter(owner=user.userprofile, chitfundName__isnull=False)
-        # if self.request.user.is_chitfund_user:
-        #     queryset = Client.objects.filter(owner=user.chitfund.owner, chitfundName__isnull=False)
-        #     queryset = queryset.filter(chitfundName__user= user)
-
+        
         return queryset
 
-    # how to update the context of the class already ceated
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
         user = self.request.user
-        # get the context if already created
-        context = super(ClientListView, self).get_context_data(**kwargs)
-        #print(user.is_chitfund_owner)
-        if user.is_chitfund_owner:
-            queryset = Client.objects.filter(owner=user.userprofile,
-                                             chitfundName__isnull=True)
-            #print(queryset.exists)
-            context.update({
-                "unassigned_clients": queryset
-            })
-            #print(context)
+        total_clients = Client.objects.filter(owner=user.userprofile).count()
+        context.update({
+            "total_clients": total_clients
+        })
         return context
 
 def Client_list(request):
@@ -75,18 +81,11 @@ def Client_list(request):
 
 class ClientDetailView(ClientLoginRequiredMixin, generic.DetailView):
     template_name = 'client/client_info.html'
-    #queryset = Client.objects.all() # default is object_list
     context_object_name = "client"
+
     def get_queryset(self):
         user = self.request.user
-
-        if user.is_chitfund_owner:
-            queryset = Client.objects.filter(owner=user.userprofile)
-        if self.request.user.is_chitfund_user:
-            queryset = Client.objects.filter(owner=user.chitfund.owner)
-            queryset = queryset.filter(chitfundName__user= user)
-
-        return queryset
+        return Client.objects.filter(owner=user.userprofile)
 
 def Client_info(request,pk):
     #print(pk)
@@ -100,30 +99,18 @@ class ClientCreateView(ClientLoginRequiredMixin, generic.CreateView):
     template_name = 'client/client_create.html'
     form_class = ClientForm
 
-    # when the form is saved successfully
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("client:client-list")
 
-    # Overwriting the method mentioned in CreateView Django to
-    # send emails
     def form_valid(self, form):
-        
-        # To send the email
-        send_mail(subject= f"You have added {form.cleaned_data['first_name']} as a new client ",
-                  message=f"""
-Hello {self.request.user.username},
-You have added another client to your name.
-Please feel free to Update or add new clients.
-Thank you
-Regards,
-Eneru Solutions
-                            """,
-                  from_email=settings.EMAIL_HOST_USER,
-
-                  recipient_list=[self.request.user.email]) # instead put request.user.email
-
-
+        user = self.request.user
+        form.instance.owner = user.userprofile
+        send_mail(
+            subject="A client has been created",
+            message="Go to the site to see the new client",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=["test@test.com"]
+        )
         return super(ClientCreateView, self).form_valid(form)
 
 
@@ -148,23 +135,16 @@ def Client_create(request):
 
 
 
-class ClientUpdateView(ChitfundLoginRequiredMixin, generic.UpdateView):
+class ClientUpdateView(ChitfundAccessMixin, generic.UpdateView):
     template_name = 'client/client_update.html'
     form_class = ClientForm
-
-    # in Update VIew we have a get_object() parameter
-    # which can be used for ger_success_url as well
-    #queryset = Client.objects.all()
     context_object_name = "client"
+
     def get_queryset(self):
         user = self.request.user
+        return Client.objects.filter(owner=user.userprofile)
 
-        queryset = Client.objects.filter(owner=user.userprofile)
-
-        return queryset
-    # when the form is saved successfully
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("client:client-list")#,kwargs={"pk":self.get_object.id})
 
 
@@ -189,20 +169,15 @@ def Client_update(request,pk):
     return render(request,'client/client_update.html',context)
 
 
-class ClientDeleteView(ChitfundLoginRequiredMixin, generic.DeleteView):
+class ClientDeleteView(ChitfundAccessMixin, generic.DeleteView):
     template_name = 'client/client_delete.html'
-    #queryset = Client.objects.all()
     context_object_name = "client"
-    # when the form is saved successfully
+
     def get_queryset(self):
         user = self.request.user
+        return Client.objects.filter(owner=user.userprofile)
 
-        queryset = Client.objects.filter(owner=user.userprofile)
-
-        return queryset
-
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("client:client-list")
 
 
@@ -213,12 +188,11 @@ def Client_delete(request, pk):
 
 
 
-class clientAssignView(ChitfundLoginRequiredMixin, generic.FormView):
+class clientAssignView(ChitfundAccessMixin, generic.UpdateView):
     template_name = 'client/client_assign.html'
-    context_object_name = "client"
     form_class = clientAssignForm
+    context_object_name = "client"
 
-    # To pass the request user to the forms.py file
     def get_form_kwargs(self,**kwargs):
         kwargs = super(clientAssignView, self).get_form_kwargs(**kwargs)
 
@@ -227,23 +201,16 @@ class clientAssignView(ChitfundLoginRequiredMixin, generic.FormView):
         })
         return kwargs
 
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     queryset = Client.objects.filter(owner=user.userprofile)
-    #     return queryset
+    def get_queryset(self):
+        user = self.request.user
+        return Client.objects.filter(owner=user.userprofile)
 
-    def get_success_url(self) -> str:
-        # same as redirect
+    def get_success_url(self):
         return reverse("client:client-list")
 
     def form_valid(self, form):
-        #print("Data is :",form.data)
-        sel_chitfund = form.cleaned_data["chitfund"]
-        client = Client.objects.get(id=self.kwargs["pk"])
-        # user = self.request.user
-        # client = Client.objects.filter(owner=user.userprofile)
-        client.chitfundName = sel_chitfund
-        client.save()
+        self.object.chitfundName = form.cleaned_data["chitfund"]
+        self.object.save()
         return super(clientAssignView, self).form_valid(form)
 
 
@@ -252,87 +219,47 @@ class categoryListView(ClientLoginRequiredMixin, generic.ListView):
     context_object_name = "category_list"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        user = self.request.user
         context = super(categoryListView, self).get_context_data(**kwargs)
-        if user.is_chitfund_owner:
-            queryset = Client.objects.filter(owner=user.userprofile)
-        else:
-            queryset = Client.objects.filter(owner=user.chitfund.owner)
+        user = self.request.user
+        queryset = Category.objects.filter(owner=user.userprofile)
         context.update({
-            "unassigned_client_count": queryset.filter(category__isnull=True).count()
+            "unassigned_clients": Client.objects.filter(owner=user.userprofile, category__isnull=True)
         })
         return context
 
     def get_queryset(self):
         user = self.request.user
-
-        if user.is_chitfund_owner:
-            queryset = Category.objects.filter(owner=user.userprofile)
-        else:
-            queryset = Category.objects.filter(owner=user.chitfund.owner)
-
-        #print(queryset)
-
-        return queryset
-
+        return Category.objects.filter(owner=user.userprofile)
 
 class categoryDetailView(ClientLoginRequiredMixin, generic.DetailView):
     template_name = 'client/client_category_detail.html'
     context_object_name = "category"
 
     def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
-        user = self.request.user
         context = super(categoryDetailView, self).get_context_data(**kwargs)
-
-        # Both of the below lines do the same thing basically
-        #clients = Client.objects.filter(category=self.get_object())
-        #self.get_object().client_set.all()
-
-        # because we added related names in the model Client
-        # we can do like this below
-        clients = self.get_object().clients.all()
-
-        # filter the clients associated with the user
-        clients = clients.filter(owner=user.userprofile)
-
-
+        user = self.request.user
+        queryset = Category.objects.filter(owner=user.userprofile)
         context.update({
-            "clients": clients
+            "unassigned_clients": Client.objects.filter(owner=user.userprofile, category__isnull=True)
         })
         return context
 
-
     def get_queryset(self):
         user = self.request.user
-
-        if user.is_chitfund_owner:
-            queryset = Category.objects.filter(owner=user.userprofile)
-        if user.is_chitfund_user:
-            queryset = Category.objects.filter(owner=user.chitfund.owner)
-
-        return queryset
-
+        return Category.objects.filter(owner=user.userprofile)
 
 class clientCategoryupdateView(ClientLoginRequiredMixin, generic.UpdateView):
     template_name = 'client/client_category_update.html'
     form_class = clientCategoryUpdateForm
     context_object_name = "client"
+
     def get_queryset(self):
         user = self.request.user
+        return Client.objects.filter(owner=user.userprofile)
 
-        if user.is_chitfund_owner:
-            queryset = Client.objects.filter(owner=user.userprofile)
-        if user.is_chitfund_user:
-            queryset = Client.objects.filter(owner=user.chitfund.owner)
+    def get_success_url(self):
+        return reverse("client:client-list")
 
-            # filter for the user who is logged in
-            queryset = queryset.filter(chitfundName__user=user)
-
-        return queryset
-
-    def get_success_url(self) -> str:
-        return reverse('client:client-info',kwargs={"pk":self.get_object().id})
-
-#@login_required('login')
+@login_required
 def ClientRestrict(request):
-    return render(request,'client/client_restrict.html')
+    return render(request, 'client/client_restrict.html')

@@ -19,10 +19,20 @@ class ClientForm(ModelForm):
 class ChitfundUserForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ('username','email','password1','password2','is_chitfund_owner','is_chitfund_user','is_namegen_user', 'is_chatbot_user')
-        # we can also do it in this way
-        # fields = ("username",)
-        # field_classes = {"username" : UsernamField}
+        fields = (
+            'username',
+            'email',
+            'password1',
+            'password2',
+            'is_chitfund_owner',
+            'is_chitfund_user',
+            'is_namegen_user',
+            'is_food_app_user',
+            'is_ocr_app_user',
+            'is_transcribe_app_user',
+            'is_chatbot_user',
+            'is_kuries_user'
+        )
 
 class clientAssignForm(forms.Form):
     # Django provides us with Model choice instaead which takes in the

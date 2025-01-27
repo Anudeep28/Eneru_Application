@@ -26,7 +26,11 @@ class User(AbstractUser):
     is_chitfund_owner = models.BooleanField(default=False)
     is_chitfund_user = models.BooleanField(default=False)
     is_namegen_user = models.BooleanField(default=False)
+    is_food_app_user = models.BooleanField(default=False)
+    is_ocr_app_user = models.BooleanField(default=False)
+    is_transcribe_app_user = models.BooleanField(default=False)
     is_chatbot_user = models.BooleanField(default=False)
+    is_kuries_user = models.BooleanField(default=False)
 
 
 class UserProfile(models.Model):
@@ -145,7 +149,7 @@ class Client(models.Model):
     # Relationship field connection betn tables
     # how to handle when the related instance is delete to handle
     # models.CASCADE will delete the client when chitfund is deleted
-    chitfundName = models.ForeignKey("chitFund",
+    chitfundName = models.ForeignKey("ChitFund",
                                      related_name="users", 
                                      on_delete=models.SET_NULL,
                                      blank=True,
@@ -155,7 +159,7 @@ class Client(models.Model):
                               on_delete=models.SET_NULL, blank=True, null=True)
 
 
-    category = models.ForeignKey("category",
+    category = models.ForeignKey("Category",
                                  related_name="clients",
                                  on_delete=models.SET_NULL,
                                  blank=True,

@@ -1,58 +1,40 @@
-from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-import google.generativeai as genai
+from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
+from django.views import generic
+from client.mixins import ChatbotAccessMixin
+import google.generativeai as genai
 
 # Replace with your actual API key
 API_KEY = settings.GEMINI_API_KEY       
 genai.configure(api_key=API_KEY)
 
-@login_required(login_url='login')
-def index(request):
-    # print("start here")
-    csrf_token = get_token(request)
-    return render(request, 'chatbot/geminiChat_test.html', {'csrf_token': csrf_token})
-
-@login_required(login_url='login')
-def chat(request):
-    # print("received post 1")
-    
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method=='POST':
-        user_input = request.POST.get('message')
-        # Process the user input and generate the response
-        response = generate_response(user_input)
-        # print("Received Post 2")
-        return JsonResponse({'response': response, 'status':'success'})
-        
-    else:
-        return JsonResponse({'status':'error','error': 'Invalid request method'})
-
 def generate_response(user_input):
-    # Implement your logic to generate the response based on the user input
-    chat = genai.GenerativeModel(model_name='gemini-1.5-flash')
-    result = chat.generate_content(user_input)
-    
-    response = result.text
-    return response
-
-
-
-# def chat(request):
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method=='POST':
-#         user_input = request.POST.get('message')
-#         print(request.POST)
-
-#         chat = genai.GenerativeModel(model_name='gemini-1.5-flash')
-#         result = chat.generate_content(user_input)
+    try:
+        # Initialize chat model
+        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
         
-#         response = result.text
-        
-#         return JsonResponse({'response': response})
-#     else:
-#         return JsonResponse({'error': 'Invalid request method'})
+        # Generate response
+        response = model.generate_content(user_input)
+        return response.text
+    except Exception as e:
+        return str(e)
+
+class ChatbotIndexView(ChatbotAccessMixin, generic.TemplateView):
+    template_name = 'chatbot/geminiChat_test.html'
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['csrf_token'] = get_token(self.request)
+        return context
 
-
-#from django.http import JsonResponse
+class ChatbotChatView(ChatbotAccessMixin, generic.View):
+    def post(self, request, *args, **kwargs):
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            user_input = request.POST.get('message')
+            response = generate_response(user_input)
+            return JsonResponse({'response': response, 'status': 'success'})
+        return JsonResponse({'status': 'error', 'error': 'Invalid request method'})

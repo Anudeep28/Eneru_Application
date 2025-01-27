@@ -1,18 +1,34 @@
-from django.shortcuts import render, redirect
-#from .models import Item, appoptions, User, Option
+from django.shortcuts import render
+from django.views import generic
+from .models import NameGenerator
+from client.mixins import NamegenAccessMixin
 from .name_model import nameGen
-#from .mixins import NameGenLoginRequiredMixin
-#from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-# User Creation Form is useful in grabbing all the information from html form tag
-#from django.contrib.auth.forms import UserCreationForm
-# To display messages to the user using Django built in forms
-# from django.contrib import messages
-# from django.views import generic
 from django.http import HttpResponse
-# initialized the LLM
-# call the LLM function
+
 llm = nameGen()
+
+
+class NameGeneratorListView(NamegenAccessMixin, generic.ListView):
+    template_name = "trial1/namegen_list.html"
+    context_object_name = "namegen"
+
+    def get_queryset(self):
+        user = self.request.user
+        return NameGenerator.objects.filter(user=user)
+
+
+class NameGeneratorCreateView(NamegenAccessMixin, generic.CreateView):
+    template_name = "trial1/namegen_create.html"
+    model = NameGenerator
+    fields = ['name']
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return "/trial1"
 
 
 @login_required(login_url='login')
@@ -23,20 +39,15 @@ def NameGenerator(request):
 
     if request.method == 'GET':
         name_list = []
-        #registered_option = appoptions.objects.get(owner = request.user)
         return render(request, template_name='trial1/NameGenerator.html',context={'name_list':name_list})
     if request.method == 'POST':
-        #print(request.POST.get('submit'))
         if request.POST.get('submit') == 'Submit':
 
-            # get the number input by user
             number = int(request.POST.get('number'))
             letter = request.POST.get('letter')
             name_list = llm.gen_name2(num=number,letter=letter)
 
-            #print(name_list)
             return render(request, template_name='trial1/NameGenerator.html',context={'name_list':name_list})
         if request.POST.get('clear') == 'Clear':
-            #print(request.POST.get('clear'))
             name_list = []
             return render(request, template_name='trial1/NameGenerator.html',context={'name_list':name_list})

@@ -1,5 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.views import generic
+from .models import FoodOrder, MenuItem
+from client.mixins import FoodAppAccessMixin
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from . import model_selection
@@ -35,41 +39,67 @@ model.load_state_dict(
 )
 
 
+class MenuListView(FoodAppAccessMixin, generic.ListView):
+    template_name = "food_app/menu_list.html"
+    context_object_name = "menu_items"
 
+    def get_queryset(self):
+        return MenuItem.objects.all()
 
-@login_required
-def index(request):
-    return render(request, 'food_app/index.html')
+class OrderListView(FoodAppAccessMixin, generic.ListView):
+    template_name = "food_app/order_list.html"
+    context_object_name = "orders"
 
-@login_required
-@csrf_exempt
-def analyze_image(request):
-    if request.method == 'POST' and request.FILES.get('image'):
+    def get_queryset(self):
+        return FoodOrder.objects.filter(user=self.request.user)
+
+class OrderCreateView(FoodAppAccessMixin, generic.CreateView):
+    template_name = "food_app/order_create.html"
+    model = FoodOrder
+    fields = ['items', 'delivery_address', 'notes']
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return "/food/orders"
+
+class FoodIndexView(FoodAppAccessMixin, generic.TemplateView):
+    template_name = "food_app/index.html"
+
+class AnalyzeImageView(FoodAppAccessMixin, generic.View):
+    def post(self, request, *args, **kwargs):
+        if 'image' not in request.FILES:
+            return JsonResponse({'error': 'No image uploaded'}, status=400)
+
+        image_file = request.FILES['image']
+        
         try:
-            # Read and transform the image
-            image_file = request.FILES['image']
-            image_bytes = image_file.read()
-            image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
-            img = transforms(image).unsqueeze(0).to(device)
+            # Open and transform image
+            image = Image.open(io.BytesIO(image_file.read())).convert('RGB')
+            transformed_image = transforms(image).unsqueeze(0).to(device)
             
-            # Get prediction
+            # Make prediction
             model.eval()
             with torch.inference_mode():
-                # Get model predictions and probabilities
-                pred_logits = model(img)
+                pred_logits = model(transformed_image)
                 pred_probs = torch.softmax(pred_logits, dim=1)
-                
-                # Get top prediction and its probability
-                pred_label_idx = torch.argmax(pred_probs, dim=1).item()
-                confidence = pred_probs[0][pred_label_idx].item()
-                
-                return JsonResponse({
-                    'food_name': class_names[pred_label_idx],
-                    'confidence': confidence
-                })
-                
-        except Exception as e:
-            print(f"Error in analyze_image: {str(e)}")
-            return JsonResponse({'error': str(e)}, status=400)
+                pred_label = torch.argmax(pred_probs, dim=1)
+                pred_class = class_names[pred_label]
+                confidence = pred_probs[0][pred_label].item()
             
-    return JsonResponse({'error': 'No image provided'}, status=400)
+            return JsonResponse({
+                'prediction': pred_class,
+                'confidence': f"{confidence:.2%}"
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+# URL mappings
+index = FoodIndexView.as_view()
+analyze_image = csrf_exempt(AnalyzeImageView.as_view())
+menu_list = MenuListView.as_view()
+order_list = OrderListView.as_view()
+order_create = OrderCreateView.as_view()

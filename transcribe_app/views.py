@@ -14,11 +14,14 @@ import torch
 from transformers import WhisperProcessor, WhisperForConditionalGeneration, pipeline, AutoFeatureExtractor
 
 # Django imports
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views import generic
+from client.mixins import TranscribeAppAccessMixin
 
 # Gemini imports
 import google.generativeai as genai
@@ -111,9 +114,10 @@ def process_with_gemini(text):
         prompt = f"""As an expert text editor, review and correct the following transcribed text.
         Do not add anything other than corrections. Just correct the text. 
         Focus on:
-        Main read through the text and understand the context of the text and
+        Main read through the text and understand the geographic location
+        context of the text and and which region the speaker is from
         then do the following:
-        1. Correct spelling of names, locations, places, addresses.
+        1. Correct the spelling of names, locations, places, addresses as per the speaker's background.
         2. Fix number formatting (dates, phone numbers, etc.)
         3. Correct currency mentions
         4. Improve text formatting and punctuation.
@@ -156,40 +160,9 @@ def process_audio_data(audio_data, sample_rate=16000):
                 chunk_length_s=30,
                 stride_length_s=5,
                 batch_size=8,
-                # num_beams=3,
                 return_timestamps=False,
             )["text"]
 
-            # # Prepare input features
-            # input_features = feature_extractor(
-            #     y, 
-            #     sampling_rate=sample_rate, 
-            #     return_tensors="pt"
-            # ).input_features
-            
-            # # Move input to same device as model
-            # input_features = input_features.to(model.device)
-            
-            # # Generate transcription with improved parameters
-            # with torch.no_grad():
-            #     predicted_ids = model.generate(
-            #         input_features,
-            #         num_beams=3,          # Increased beam size
-            #         temperature=0.1,       # Reduced temperature for more focused sampling
-            #         repetition_penalty=1.2,# Penalize repetition
-            #         no_repeat_ngram_size=3,# Prevent repeating 3-grams
-            #     )
-            
-            # # Decode transcription
-            # transcription = tokenizer.batch_decode(
-            #     predicted_ids, 
-            #     skip_special_tokens=True,
-            #     normalize=True
-            # )
-            
-            # Get the first transcription result and clean it
-            # result = transcription[0].strip() if transcription else ""
-            
             logging.info(f"Transcription result: {transcribed_text}")
             return transcribed_text
             
@@ -207,16 +180,11 @@ def process_audio_data(audio_data, sample_rate=16000):
         logging.error(f"Error in process_audio_data: {str(e)}", exc_info=True)
         raise
 
-@login_required
-def index(request):
-    """Render the main transcription page."""
-    return render(request, 'transcribe_app/index.html')
+class TranscribeIndexView(TranscribeAppAccessMixin, generic.TemplateView):
+    template_name = 'transcribe_app/index.html'
 
-@csrf_exempt
-@login_required
-def transcribe_audio(request):
-    """Handle audio transcription requests."""
-    if request.method == 'POST':
+class TranscribeAudioView(TranscribeAppAccessMixin, generic.View):
+    def post(self, request, *args, **kwargs):
         try:
             # Check if this is a reinitialization request (application/json)
             if request.content_type == 'application/json':
@@ -270,15 +238,13 @@ def transcribe_audio(request):
             logger.error(f"Error in transcribe_audio: {e}\n{traceback.format_exc()}")
             return JsonResponse({'error': str(e)}, status=500)
             
-    return JsonResponse({
-        'success': False,
-        'error': 'Invalid request method'
-    }, status=405)
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request method'
+        }, status=405)
 
-@login_required
-def download_markdown(request):
-    """Download transcription as markdown."""
-    if request.method == 'POST':
+class DownloadMarkdownView(TranscribeAppAccessMixin, generic.View):
+    def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
             text = data.get('text', '')
@@ -293,13 +259,9 @@ def download_markdown(request):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-    
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-@login_required
-def download_word(request):
-    """Download transcription as Word document."""
-    if request.method == 'POST':
+class DownloadWordView(TranscribeAppAccessMixin, generic.View):
+    def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
             text = data.get('text', '')
@@ -322,5 +284,9 @@ def download_word(request):
             
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-    
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+# URL mappings
+index = TranscribeIndexView.as_view()
+transcribe_audio = csrf_exempt(TranscribeAudioView.as_view())
+download_markdown = DownloadMarkdownView.as_view()
+download_word = DownloadWordView.as_view()

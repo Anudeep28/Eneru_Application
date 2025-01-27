@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load tailwind_filters %}
+{% load crispy_forms_tags %}
 
 {% block title %}
     Eneru-Landing-Page
@@ -7,15 +7,96 @@
 
 {% block content %}
 <div class="max-w-lg mx-auto">
-    <form method="POST" class="mt-5">
-        {% csrf_token %}
-        {{ form|crispy }}
-        <button type="submit"
-        class="w-full text-white bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-md">SignUp</button>
-    </form>
-    <div class="py-5 border-t border-gray-200 mt-5">
-        <a class="hover:text-blue-500" href="{% url 'login' %}">Have an Account?</a>
+    <div class="bg-white p-8 rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center">Sign Up for Eneru</h2>
+        
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+            
+            {# Display main signup fields #}
+            <div class="mb-4">
+                {{ form.username|as_crispy_field }}
+            </div>
+            <div class="mb-4">
+                {{ form.email|as_crispy_field }}
+            </div>
+            <div class="mb-4">
+                {{ form.password1|as_crispy_field }}
+            </div>
+            <div class="mb-4">
+                {{ form.password2|as_crispy_field }}
+            </div>
+            <div class="mb-4">
+                {{ form.is_chitfund_owner|as_crispy_field }}
+            </div>
+            
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-4">Select Apps (₹100 each)</h3>
+                <div class="space-y-3 bg-gray-50 p-4 rounded-md">
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_chitfund" id="app_chitfund" class="app-checkbox mr-2" value="100">
+                        <label for="app_chitfund" class="flex-1">Chitfund Management App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_namegen" id="app_namegen" class="app-checkbox mr-2" value="100">
+                        <label for="app_namegen" class="flex-1">Name Generator App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_food" id="app_food" class="app-checkbox mr-2" value="100">
+                        <label for="app_food" class="flex-1">Food Ordering App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_ocr" id="app_ocr" class="app-checkbox mr-2" value="100">
+                        <label for="app_ocr" class="flex-1">OCR App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_transcribe" id="app_transcribe" class="app-checkbox mr-2" value="100">
+                        <label for="app_transcribe" class="flex-1">Transcribe App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_chatbot" id="app_chatbot" class="app-checkbox mr-2" value="100">
+                        <label for="app_chatbot" class="flex-1">Chatbot App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="app_kuries" id="app_kuries" class="app-checkbox mr-2" value="100">
+                        <label for="app_kuries" class="flex-1">Kuries App</label>
+                        <span class="text-gray-600">₹100</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-right">
+                    <p class="text-lg font-semibold">Total: ₹<span id="total">0</span></p>
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                    Sign Up
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
+<script>
+function updateTotal() {
+    const checkboxes = document.querySelectorAll('.app-checkbox:checked');
+    const total = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseInt(checkbox.value), 0);
+    document.getElementById('total').textContent = total;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const checkboxes = document.querySelectorAll('.app-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateTotal);
+    });
+    updateTotal();
+});
+</script>
 {% endblock content %}
