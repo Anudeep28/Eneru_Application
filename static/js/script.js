@@ -4,6 +4,7 @@ $(document).ready(function() {
     const chatInput = $('#chat-input-gemini');
     const sendButton = $('#send-button-gemini');
     const clearButton = $('#clear-chat');
+    let isFirstLoad = true;
 
     // Configure marked.js
     marked.setOptions({
@@ -26,11 +27,38 @@ $(document).ready(function() {
         }
     });
 
+    // Function to format timestamp
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+    }
+
     // Function to add a message to the chat
-    function addMessage(message, isUser = false) {
+    function addMessage(message, isUser = false, timestamp = new Date()) {
         const messageDiv = $('<div>').addClass('message p-3 mb-3 rounded-lg ' + 
             (isUser ? 'ml-auto bg-indigo-500 text-white user-message' : 'mr-auto bg-gray-100'));
         messageDiv.css('max-width', '80%');
+        
+        // Add timestamp
+        const timestampDiv = $('<div>').addClass('text-xs text-gray-500 mt-1')
+            .text(new Date(timestamp).toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            }));
         
         if (isUser) {
             // For user messages, just show the text
@@ -60,6 +88,22 @@ $(document).ready(function() {
                 console.error('Markdown parsing error:', e);
                 messageDiv.text(message);
             }
+        }
+
+        // Add timestamp to message
+        messageDiv.append(timestampDiv);
+        
+        // Check if we need to add a date separator
+        const lastDateSeparator = chatMessages.find('.conversation-date:last');
+        const lastDate = lastDateSeparator.length ? lastDateSeparator.data('date') : null;
+        const currentDate = formatTimestamp(timestamp);
+        
+        if (!lastDate || lastDate !== currentDate) {
+            const dateSeparator = $('<div>')
+                .addClass('conversation-date')
+                .text(currentDate)
+                .data('date', currentDate);
+            chatMessages.append(dateSeparator);
         }
         
         chatMessages.append(messageDiv);
@@ -93,7 +137,8 @@ $(document).ready(function() {
             url: '/chatbot/geminiChat/',
             data: {
                 'message': message,
-                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+                'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+                'conversation_id': $('input[name=conversation_id]').val()
             },
             success: function(response) {
                 loadingDiv.remove();
@@ -120,7 +165,7 @@ $(document).ready(function() {
 
     // Clear chat
     clearButton.on('click', function() {
-        if (confirm('Are you sure you want to clear the chat history?')) {
+        if (confirm('Are you sure you want to clear the chat history? This will only clear the display, not the stored conversation.')) {
             chatMessages.empty();
             addWelcomeMessage();
         }
@@ -133,10 +178,11 @@ $(document).ready(function() {
         }, 300);
     }
 
-    // Add welcome message
+    // Add welcome message if no previous messages
     function addWelcomeMessage() {
-        setTimeout(() => {
-            addMessage(`👋 Hello! I'm Eneru, your AI assistant.
+        if (chatMessages.children().length === 0) {
+            setTimeout(() => {
+                addMessage(`👋 Hello! I'm Eneru, your AI assistant.
 
 I can help you with:
 - Answering questions
@@ -145,10 +191,21 @@ I can help you with:
 - Solving problems
 - And much more!
 
-Feel free to ask me anything! 😊`);
-        }, 500); // Delay to show animation
+I remember our conversations, so feel free to refer to our previous discussions! 😊`);
+            }, 500);
+        }
     }
 
-    // Add initial welcome message
-    addWelcomeMessage();
+    // Initialize chat
+    if (isFirstLoad) {
+        isFirstLoad = false;
+        if (chatMessages.children().length === 0) {
+            addWelcomeMessage();
+        }
+    }
+
+    // Initialize syntax highlighting for any existing code blocks
+    chatMessages.find('pre code').each(function(i, block) {
+        hljs.highlightElement(block);
+    });
 });

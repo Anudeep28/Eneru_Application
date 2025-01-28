@@ -127,6 +127,32 @@
     .send-button-hover:active {
         transform: scale(0.95);
     }
+
+    .conversation-date {
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin: 1rem 0;
+        position: relative;
+    }
+
+    .conversation-date::before,
+    .conversation-date::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 25%;
+        height: 1px;
+        background: #e5e7eb;
+    }
+
+    .conversation-date::before {
+        left: 0;
+    }
+
+    .conversation-date::after {
+        right: 0;
+    }
 </style>
 {% endblock %}
 
@@ -153,13 +179,25 @@
 
         <!-- Chat Messages -->
         <div class="chat-messages-gemini" style="height: 60vh; overflow-y: auto; padding: 1.5rem;">
-            <!-- Welcome message will be added by JavaScript -->
+            <!-- Previous messages will be loaded here -->
+            {% if recent_messages %}
+                {% for message in recent_messages %}
+                    <div class="message p-3 mb-3 rounded-lg {% if message.is_user %}ml-auto bg-indigo-500 text-white user-message{% else %}mr-auto bg-gray-100{% endif %}" style="max-width: 80%;">
+                        {% if message.is_user %}
+                            {{ message.content }}
+                        {% else %}
+                            <div class="markdown-content">{{ message.content|safe }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
 
         <!-- Input Form -->
         <div class="border-t border-gray-100 p-4 bg-white chat-input-container">
             <form id="chat-form" method="post" action="/chatbot/geminiChat/">
                 {% csrf_token %}
+                <input type="hidden" name="conversation_id" value="{{ conversation_id }}">
                 <div class="flex items-center gap-2">
                     <input 
                         type="text" 

@@ -1,114 +1,90 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
-from django.views import generic
-from client.mixins import ChatbotAccessMixin
+from django.views import View
 import google.generativeai as genai
-import re
+from django.conf import settings
+from .models import Conversation, Message
+import json
 
-# Replace with your actual API key
-API_KEY = settings.GEMINI_API_KEY       
-genai.configure(api_key=API_KEY)
+# Configure the Gemini model
+genai.configure(api_key=settings.GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-def format_code_blocks(text):
-    # Split text into blocks (code and non-code)
-    parts = re.split(r'(```[\s\S]*?```)', text)
-    
-    formatted_parts = []
-    for part in parts:
-        if part.startswith('```') and part.endswith('```'):
-            # Handle code blocks
-            # Extract language if specified
-            lang_match = re.match(r'```(\w+)?\n', part)
-            lang = lang_match.group(1) if lang_match else ''
-            
-            # Clean up the code block
-            code = part.replace('```' + (lang if lang else ''), '', 1)  # Remove opening fence
-            code = code.rstrip('```')  # Remove closing fence
-            code = code.strip()  # Remove extra whitespace
-            
-            # Reconstruct code block with proper formatting
-            formatted_parts.append(f'```{lang}\n{code}\n```')
-        else:
-            formatted_parts.append(part)
-    
-    return ''.join(formatted_parts)
+class ChatbotIndexView(View):
+    template_name = 'chatbot/geminiChat.html'
 
-def format_markdown(text):
-    # First, handle code blocks specially
-    text = format_code_blocks(text)
-    
-    # Handle inline code
-    text = re.sub(r'`([^`]+)`', r'`\1`', text)
-    
-    # Format lists
-    text = re.sub(r'(?m)^(\d+)\.\s+', r'\1. ', text)  # Numbered lists
-    text = re.sub(r'(?m)^[-*]\s+', '- ', text)        # Bullet points
-    
-    # Format headers
-    text = re.sub(r'(?m)^(#{1,6})\s*', r'\1 ', text)
-    
-    # Format blockquotes
-    text = re.sub(r'(?m)^>\s*', '> ', text)
-    
-    # Ensure proper spacing around headers and lists
-    text = re.sub(r'\n{3,}', '\n\n', text)  # Remove extra blank lines
-    text = re.sub(r'(?m)^(#{1,6}|\d+\.|-|\*)', r'\n\1', text)  # Add newline before headers and lists
-    
-    return text.strip()
-
-def generate_response(user_input):
-    try:
-        # Initialize chat model with specific configuration
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            generation_config={
-                'temperature': 0.7,
-                'top_p': 0.8,
-                'top_k': 40,
-            }
+    def get(self, request):
+        # Get or create a conversation for this session
+        session_id = request.session.session_key or request.session.create()
+        conversation, created = Conversation.objects.get_or_create(
+            session_id=session_id,
+            user=request.user if request.user.is_authenticated else None
         )
         
-        # Generate response with specific prompt engineering
-        prompt = f"""Please provide a clear and well-formatted response using markdown.
-For code examples:
-- Use proper code blocks with language specification
-- Ensure proper indentation
-- Add comments where necessary
-
-For explanations:
-- Use appropriate headers
-- Use bullet points or numbered lists where applicable
-- Highlight important terms using bold or inline code
-
-Question: {user_input}
-"""
+        # Get recent messages
+        recent_messages = Message.objects.filter(conversation=conversation).order_by('timestamp')[:10]
         
-        # Generate response
-        response = model.generate_content(prompt)
-        
-        # Format the response text for proper markdown rendering
-        formatted_response = format_markdown(response.text)
-        
-        return formatted_response
-    except Exception as e:
-        return str(e)
+        context = {
+            'conversation_id': conversation.id,
+            'recent_messages': recent_messages
+        }
+        return render(request, self.template_name, context)
 
-class ChatbotIndexView(ChatbotAccessMixin, generic.TemplateView):
-    template_name = 'chatbot/geminiChat.html'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['csrf_token'] = get_token(self.request)
-        return context
+class ChatbotChatView(View):
+    def post(self, request):
+        try:
+            message = request.POST.get('message', '').strip()
+            if not message:
+                return JsonResponse({'status': 'error', 'message': 'Message is required'})
 
-class ChatbotChatView(ChatbotAccessMixin, generic.View):
-    def post(self, request, *args, **kwargs):
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            user_input = request.POST.get('message')
-            response = generate_response(user_input)
-            return JsonResponse({'response': response, 'status': 'success'})
-        return JsonResponse({'status': 'error', 'error': 'Invalid request method'})
+            # Get or create conversation
+            session_id = request.session.session_key or request.session.create()
+            conversation, created = Conversation.objects.get_or_create(
+                session_id=session_id,
+                user=request.user if request.user.is_authenticated else None
+            )
+
+            # Save user message
+            user_message = Message.objects.create(
+                conversation=conversation,
+                content=message,
+                is_user=True
+            )
+
+            # Get conversation history
+            history = Message.objects.filter(conversation=conversation).order_by('timestamp')
+            
+            # Build conversation context
+            chat_history = []
+            for msg in history:
+                role = "user" if msg.is_user else "assistant"
+                chat_history.append({"role": role, "parts": [msg.content]})
+
+            # Start chat and get response
+            chat = model.start_chat(history=chat_history)
+            response = chat.send_message(message)
+            
+            if response.text:
+                # Save bot response
+                bot_message = Message.objects.create(
+                    conversation=conversation,
+                    content=response.text,
+                    is_user=False
+                )
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'response': response.text,
+                    'conversation_id': conversation.id
+                })
+            else:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Failed to get response from the bot'
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
