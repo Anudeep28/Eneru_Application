@@ -1,28 +1,190 @@
 {% extends 'chatbot/base.html' %}
 {% load static %}
 {% block title %}
-    Gemini Chatbot
+    Eneru AI Assistant
 {% endblock title %}
 
-{% block content %}
-  <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-purple-100">
-    <section class="text-gray-800 body-font">
-      <div class="container mx-auto flex px-5 py-24 items-center justify-center flex-col">
-        <h1 class="text-3xl font-bold text-center mb-4">Eneru Chatbot</h1>
-        <div class="chat-store ml-10 mr-10 text-center rounded shadow p-4 flex-grow-1 w-100 d-flex flex-column">
-          <div class="chat-messages flex-grow-1 overflow-auto text-left"></div>
-          <form id="chat-form" method="post" action="/chatbot/geminiChat/" class="mt-4 d-flex w-100">
-            {% csrf_token %}
-            <input type="text" id="chat-input" name="message" placeholder="Type your message..." class="form-control me-2 flex-grow-1" />
-            <button type="submit" id="send-button" class="gemini-button text-center mt-5 btn btn-primary"><i class="mr-2 fas fa-paper-plane"></i>Send</button>
-          </form>
-        </div>
-      </div>
-    </section>
-  </div>
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+<style>
+    pre code {
+        color: #e5e7eb !important;
+    }
+    
+    .message {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: messageAppear 0.3s ease forwards;
+    }
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{% static 'js/script.js' %}"></script>
-  
+    @keyframes messageAppear {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .message.user-message {
+        animation-delay: 0.1s;
+    }
+
+    .message pre {
+        background: #1f2937;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        overflow-x: auto;
+        position: relative;
+    }
+
+    .message code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
+    .message p {
+        margin-bottom: 0.5rem;
+    }
+
+    .message ul, .message ol {
+        margin-left: 1.5rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .message li {
+        margin-bottom: 0.25rem;
+    }
+
+    .message blockquote {
+        border-left: 4px solid #e5e7eb;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #6b7280;
+    }
+
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    .animate-bounce {
+        animation: bounce 1s infinite;
+    }
+
+    .chat-header {
+        animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .chat-input-container {
+        animation: slideUp 0.5s ease;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .chat-container {
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .send-button-hover {
+        transition: all 0.2s ease;
+    }
+
+    .send-button-hover:hover {
+        transform: scale(1.05);
+    }
+
+    .send-button-hover:active {
+        transform: scale(0.95);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden chat-container">
+        <!-- Chat Header -->
+        <div class="bg-indigo-600 px-6 py-4 flex items-center justify-between chat-header">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-white">Eneru AI Assistant</h1>
+                    <p class="text-indigo-200 text-sm">Always here to help</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="clear-chat" class="text-white/80 hover:text-white transition-colors hover:scale-110 transform duration-200">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages-gemini" style="height: 60vh; overflow-y: auto; padding: 1.5rem;">
+            <!-- Welcome message will be added by JavaScript -->
+        </div>
+
+        <!-- Input Form -->
+        <div class="border-t border-gray-100 p-4 bg-white chat-input-container">
+            <form id="chat-form" method="post" action="/chatbot/geminiChat/">
+                {% csrf_token %}
+                <div class="flex items-center gap-2">
+                    <input 
+                        type="text" 
+                        id="chat-input-gemini" 
+                        name="message"
+                        class="flex-1 px-4 py-2 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                        placeholder="Type your message..."
+                    />
+                    <button
+                        type="submit"
+                        id="send-button-gemini"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors duration-200 send-button-hover"
+                    >
+                        <i class="fas fa-paper-plane mr-1"></i>
+                        Send
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock content %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.2.4/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+<script src="{% static 'js/script.js' %}"></script>
+{% endblock %}

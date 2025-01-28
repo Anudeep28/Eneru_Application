@@ -4,20 +4,151 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Eneru Chatbot{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <style>
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.8);
+        }
+
+        /* Animation Styles */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Markdown Styles */
+        .markdown-body {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .markdown-body p {
+            margin-bottom: 1rem;
+        }
+
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            line-height: 1.25;
+        }
+
+        .markdown-body ul,
+        .markdown-body ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.25rem;
+        }
+
+        .markdown-body pre {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .markdown-body code {
+            font-family: ui-monospace, monospace;
+            font-size: 0.875em;
+            color: #374151;
+        }
+
+        .markdown-body p code {
+            background-color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 0.25rem;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6b7280;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+        }
+
+        .markdown-body table {
+            width: 100%;
+            margin: 1rem 0;
+            border-collapse: collapse;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .markdown-body th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <nav class="bg-white shadow-lg">
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between h-16">
-                <div class="flex">
+                <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-2xl font-bold text-indigo-600">Eneru Chatbot</span>
+                        <span class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-600">Eneru Chatbot</span>
                     </div>
                     <div class="ml-10 flex items-center space-x-4">
-                        <a href="{% url 'landing-page' %}" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300">
+                        <a href="{% url 'landing-page' %}" class="text-gray-700 hover:text-indigo-600 transition-colors duration-300 flex items-center gap-2">
                             <i class="fas fa-home"></i> Home
                         </a>
                     </div>
@@ -26,19 +157,17 @@
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
+    <main class="flex-grow">
         {% block content %}
         {% endblock %}
     </main>
 
-    <footer class="bg-white shadow-lg mt-8">
+    <footer class="bg-white shadow-sm mt-auto">
         <div class="max-w-7xl mx-auto py-4 px-4">
             <p class="text-center text-gray-600">2024 Eneru (opc). All rights reserved.</p>
         </div>
     </footer>
 
-    <!-- JavaScript -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
