@@ -11,6 +11,7 @@
         {% endblock title %}
     </title>
     <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    <link href="{% static 'css/messages.css' %}" rel="stylesheet">
     <link href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
 </head>
@@ -19,14 +20,13 @@
         {% include 'navbar.html' %}
     </div>
     <div>
-        
-
+        {% include 'messages.html' %}
         {% block content %}
 
         {% endblock content %}
     </div>
     
-    <!--{% include 'scripts.html' %}-->
     {% include 'scripts.html' %}
+    <script src="{% static 'js/messages.js' %}"></script>
 </body>
 </html>

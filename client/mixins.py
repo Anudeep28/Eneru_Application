@@ -13,10 +13,16 @@ class AppAccessMixin(AccessMixin):
             
         if not self.app_permission or not hasattr(request.user, self.app_permission):
             raise ValueError(f"app_permission not properly set for {self.__class__.__name__}")
+        
+        # Clear any existing unauthorized access messages for this specific app
+        storage = messages.get_messages(request)
+        for message in storage:
+            if f"not authorized to use the {self.app_name}" in str(message):
+                storage.used = True
             
         if not getattr(request.user, self.app_permission):
-            messages.error(request, f"You are not authorized to use the {self.app_name} app. Please subscribe to access this feature.")
-            return redirect('login')
+            messages.error(request, f"You are not authorized to use the {self.app_name} app. Please subscribe to access this feature.", extra_tags=f'unauthorized_{self.app_name.lower().replace(" ", "_")}')
+            return redirect('landing-page')
             
         return super().dispatch(request, *args, **kwargs)
 

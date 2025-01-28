@@ -1,0 +1,48 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/messages.css' %}">
+
+<div class="alert-container">
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.extra_tags %}
+                <div class="custom-alert {{ message.tags }}" id="{{ message.extra_tags }}">
+                    <div class="alert-icon">
+                        {% if message.tags == 'error' %}
+                            ⚠️
+                        {% elif message.tags == 'success' %}
+                            ✅
+                        {% elif message.tags == 'warning' %}
+                            ⚡
+                        {% else %}
+                            ℹ️
+                        {% endif %}
+                    </div>
+                    <div class="alert-content">
+                        {{ message }}
+                    </div>
+                    <button type="button" class="close-btn" onclick="dismissAlert(this.parentElement)">×</button>
+                </div>
+            {% else %}
+                <div class="custom-alert {{ message.tags }}">
+                    <div class="alert-icon">
+                        {% if message.tags == 'error' %}
+                            ⚠️
+                        {% elif message.tags == 'success' %}
+                            ✅
+                        {% elif message.tags == 'warning' %}
+                            ⚡
+                        {% else %}
+                            ℹ️
+                        {% endif %}
+                    </div>
+                    <div class="alert-content">
+                        {{ message }}
+                    </div>
+                    <button type="button" class="close-btn" onclick="dismissAlert(this.parentElement)">×</button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
+
+<script src="{% static 'js/messages.js' %}"></script>

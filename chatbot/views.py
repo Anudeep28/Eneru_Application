@@ -14,8 +14,12 @@ class ChatbotIndexView(View):
     template_name = 'chatbot/geminiChat.html'
 
     def get(self, request):
+        # Ensure session is created first
+        if not request.session.session_key:
+            request.session.create()
+        session_id = request.session.session_key
+        
         # Get or create a conversation for this session
-        session_id = request.session.session_key or request.session.create()
         conversation, created = Conversation.objects.get_or_create(
             session_id=session_id,
             user=request.user if request.user.is_authenticated else None
@@ -37,8 +41,12 @@ class ChatbotChatView(View):
             if not message:
                 return JsonResponse({'status': 'error', 'message': 'Message is required'})
 
+            # Ensure session is created first
+            if not request.session.session_key:
+                request.session.create()
+            session_id = request.session.session_key
+            
             # Get or create conversation
-            session_id = request.session.session_key or request.session.create()
             conversation, created = Conversation.objects.get_or_create(
                 session_id=session_id,
                 user=request.user if request.user.is_authenticated else None
