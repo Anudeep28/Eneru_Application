@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from client.mixins import ChatbotAccessMixin
 import google.generativeai as genai
 from django.conf import settings
 from .models import Conversation, Message
@@ -10,7 +12,7 @@ import json
 genai.configure(api_key=settings.GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-class ChatbotIndexView(View):
+class ChatbotIndexView(LoginRequiredMixin, ChatbotAccessMixin, View):
     template_name = 'chatbot/geminiChat.html'
 
     def get(self, request):
@@ -34,7 +36,7 @@ class ChatbotIndexView(View):
         }
         return render(request, self.template_name, context)
 
-class ChatbotChatView(View):
+class ChatbotChatView(LoginRequiredMixin, ChatbotAccessMixin, View):
     def post(self, request):
         try:
             message = request.POST.get('message', '').strip()
