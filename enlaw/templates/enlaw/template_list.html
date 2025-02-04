@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Search and Filter Section -->
+    <div class="mb-8">
+        <div class="flex space-x-4">
+            <input type="text" id="search" placeholder="Search templates..." 
+                   class="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            <select id="category-filter" class="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                    <option value="{{ category }}">{{ category }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Template Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for template in templates %}
+        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
+            <div class="p-6">
+                <h3 class="text-xl font-semibold mb-2">{{ template.title }}</h3>
+                <p class="text-gray-600 mb-4">{{ template.category }}</p>
+                <div class="flex justify-between items-center">
+                    <button onclick="previewTemplate('{{ template.id }}')" 
+                            class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                        Preview
+                    </button>
+                    <a href="{% if template.path and template.path|length > 0 %}{% url 'enlaw:edit_static_template' template.path %}{% elif template.id and template.id|length > 0 %}{% url 'enlaw:edit_document' template.id %}{% else %}#{% endif %}" 
+                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        Use Template
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="preview-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg w-3/4 h-3/4 overflow-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold" id="preview-title"></h2>
+                <button onclick="closePreview()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="preview-content" class="prose max-w-none"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewTemplate(templateId) {
+    fetch(`/enlaw/template/${templateId}/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('preview-title').textContent = data.title;
+            document.getElementById('preview-content').innerHTML = data.content;
+            document.getElementById('preview-modal').classList.remove('hidden');
+        });
+}
+
+function closePreview() {
+    document.getElementById('preview-modal').classList.add('hidden');
+}
+
+// Search and filter functionality
+document.getElementById('search').addEventListener('input', debounce(filterTemplates, 300));
+document.getElementById('category-filter').addEventListener('change', filterTemplates);
+
+function filterTemplates() {
+    const searchQuery = document.getElementById('search').value;
+    const category = document.getElementById('category-filter').value;
+    
+    window.location.href = `?search=${searchQuery}&category=${category}`;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

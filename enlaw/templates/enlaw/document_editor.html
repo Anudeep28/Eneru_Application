@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Editor - EnLaw</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="{% static 'enlaw/js/voice_input.js' %}"></script>
+    <style>
+        .editable-field {
+            border-bottom: 2px dashed #4299e1;
+            padding: 2px 4px;
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+        .editable-field:hover {
+            background-color: #ebf8ff;
+        }
+        .editable-field:focus {
+            outline: none;
+            border-bottom: 2px solid #2b6cb0;
+            background-color: #ebf8ff;
+        }
+        .recording-active {
+            background-color: #fed7d7;
+        }
+        .field-invalid {
+            border-bottom-color: #f56565;
+        }
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <form id="documentForm" method="POST" class="space-y-6">
+                {% csrf_token %}
+                <div class="flex justify-between items-center mb-6">
+                    <input type="text" name="document_title" 
+                           class="text-2xl font-bold p-2 border rounded w-2/3 focus:ring-2 focus:ring-blue-500"
+                           value="{{ template.title|default:'Untitled Document' }}"
+                           required>
+                    <div class="space-x-2">
+                        <button type="button" id="saveProgress" 
+                                class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                            Save Progress
+                        </button>
+                        <button type="button" id="exportPdf" 
+                                class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                            Export PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div id="document-content" class="prose max-w-none">
+                    {{ template.content|safe }}
+                </div>
+
+                <input type="hidden" name="template_id" value="{{ template.id }}">
+                <input type="hidden" name="template_path" value="{{ template.path }}">
+
+                <div class="flex justify-between items-center mt-6">
+                    <div class="flex items-center space-x-4">
+                        <button type="button" onclick="startVoiceInput()" 
+                                class="flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                            <span class="mr-2">🎤</span> Voice Input
+                        </button>
+                        <div id="voiceStatus" class="text-sm text-gray-600"></div>
+                    </div>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600">
+                        Save Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form validation
+            const form = document.getElementById('documentForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (validateForm()) {
+                    this.submit();
+                }
+            });
+
+            // Save progress
+            document.getElementById('saveProgress').addEventListener('click', async function() {
+                const formData = collectFormData();
+                try {
+                    const response = await fetch('/enlaw/save-progress/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    if (response.ok) {
+                        showNotification('Progress saved successfully');
+                    }
+                } catch (error) {
+                    showNotification('Error saving progress', 'error');
+                }
+            });
+
+            // Export PDF
+            document.getElementById('exportPdf').addEventListener('click', async function() {
+                const documentId = document.querySelector('[name=document_id]')?.value;
+                if (documentId) {
+                    window.location.href = `/enlaw/export-pdf/${documentId}/`;
+                } else {
+                    showNotification('Please save the document first', 'error');
+                }
+            });
+        });
+
+        function validateForm() {
+            let isValid = true;
+            document.querySelectorAll('.editable-field[required]').forEach(field => {
+                if (!field.textContent.trim()) {
+                    field.classList.add('field-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('field-invalid');
+                }
+            });
+            return isValid;
+        }
+
+        function collectFormData() {
+            const data = {
+                title: document.querySelector('[name=document_title]').value,
+                content: document.getElementById('document-content').innerHTML,
+                fields: {}
+            };
+            document.querySelectorAll('.editable-field').forEach(field => {
+                data.fields[field.getAttribute('data-field-name')] = field.textContent.trim();
+            });
+            return data;
+        }
+
+        function showNotification(message, type = 'success') {
+            // Implement notification UI
+        }
+    </script>
+</body>
+</html>

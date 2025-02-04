@@ -22,7 +22,7 @@ class AppAccessMixin(AccessMixin):
             
         if not getattr(request.user, self.app_permission):
             messages.error(request, f"You are not authorized to use the {self.app_name} app. Please subscribe to access this feature.", extra_tags=f'unauthorized_{self.app_name.lower().replace(" ", "_")}')
-            return redirect('landing-page')
+            return redirect('home')
             
         return super().dispatch(request, *args, **kwargs)
 

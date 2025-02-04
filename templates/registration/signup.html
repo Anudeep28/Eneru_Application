@@ -55,7 +55,7 @@
                     </div>
                     <div class="flex items-center">
                         <input type="checkbox" name="app_transcribe" id="app_transcribe" class="app-checkbox mr-2" value="100">
-                        <label for="app_transcribe" class="flex-1">Transcribe App</label>
+                        <label for="app_transcribe" class="flex-1">Speech to Text App</label>
                         <span class="text-gray-600">₹100</span>
                     </div>
                     <div class="flex items-center">
@@ -87,7 +87,11 @@
 <script>
 function updateTotal() {
     const checkboxes = document.querySelectorAll('.app-checkbox:checked');
-    const total = Array.from(checkboxes).reduce((sum, checkbox) => sum + parseInt(checkbox.value), 0);
+    let total = 0;
+    checkboxes.forEach(checkbox => {
+        const value = parseInt(checkbox.value) || 0;
+        total += value;
+    });
     document.getElementById('total').textContent = total;
 }
 

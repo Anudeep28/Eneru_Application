@@ -2,7 +2,7 @@ from typing import Any
 from django.db.models.query import QuerySet
 from django.forms.models import BaseModelForm
 from django.core.mail import send_mail
-from django.shortcuts import render, redirect, reverse
+from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.http import HttpResponse
 from .models import User, ChitFund, Client, Category
 from .forms import ClientForm, ChitfundUserForm, clientAssignForm, clientCategoryUpdateForm
@@ -11,6 +11,10 @@ from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import ClientLoginRequiredMixin, ChitfundAccessMixin
 from django.contrib.auth.decorators import login_required
+from django.db import connection
+from django.contrib import messages
+from django.urls import reverse_lazy
+from django.views.generic import TemplateView
 
 # Class based view
 # CRUD - Create, Retrieve, Update, Delete, List view
@@ -21,25 +25,35 @@ class ClientsignupView(generic.CreateView):
     form_class = ChitfundUserForm
 
     def form_valid(self, form):
-        # Get the selected apps from POST data
-        selected_apps = {
-            'app_chitfund': 'is_chitfund_user',
-            'app_namegen': 'is_namegen_user',
-            'app_food': 'is_food_app_user',
-            'app_ocr': 'is_ocr_app_user',
-            'app_transcribe': 'is_transcribe_app_user',
-            'app_chatbot': 'is_chatbot_user',
-            'app_kuries': 'is_kuries_user'
-        }
-        
-        # Set the user permissions based on selected apps
-        user = form.save(commit=False)
-        for app_name, field_name in selected_apps.items():
-            if self.request.POST.get(app_name):
-                setattr(user, field_name, True)
-        
-        user.save()
-        return super().form_valid(form)
+        try:
+            # Print the SQL query
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM client_user LIMIT 1")
+                desc = cursor.description
+                print("Database columns:", [col[0] for col in desc])
+
+            # Get the selected apps from POST data
+            selected_apps = {
+                'app_chitfund': 'is_chitfund_user',
+                'app_namegen': 'is_namegen_user',
+                'app_food': 'is_food_app_user',
+                'app_ocr': 'is_ocr_app_user',
+                'app_transcribe': 'is_transcribe_app_user',
+                'app_chatbot': 'is_chatbot_user',
+                'app_kuries': 'is_kuries_user'
+            }
+            
+            # Set the user permissions based on selected apps
+            user = form.save(commit=False)
+            for app_name, field_name in selected_apps.items():
+                if self.request.POST.get(app_name):
+                    setattr(user, field_name, True)
+            
+            user.save()
+            return super().form_valid(form)
+        except Exception as e:
+            print(f"Error in form_valid: {str(e)}")
+            raise
 
     def get_success_url(self) -> str:
         return reverse("login")
@@ -259,6 +273,42 @@ class clientCategoryupdateView(ClientLoginRequiredMixin, generic.UpdateView):
 
     def get_success_url(self):
         return reverse("client:client-list")
+
+class ClientSettingsView(LoginRequiredMixin, TemplateView):
+    template_name = 'client/settings.html'
+    
+    def post(self, request, *args, **kwargs):
+        if 'update_profile' in request.POST:
+            # Handle profile update
+            username = request.POST.get('username')
+            email = request.POST.get('email')
+            
+            user = request.user
+            if username and username != user.username:
+                user.username = username
+            if email and email != user.email:
+                user.email = email
+            user.save()
+            messages.success(request, 'Profile updated successfully!')
+            
+        elif 'change_password' in request.POST:
+            # Handle password change
+            current_password = request.POST.get('current_password')
+            new_password = request.POST.get('new_password')
+            confirm_password = request.POST.get('confirm_password')
+            
+            user = request.user
+            if not user.check_password(current_password):
+                messages.error(request, 'Current password is incorrect.')
+            elif new_password != confirm_password:
+                messages.error(request, 'New passwords do not match.')
+            else:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Password changed successfully! Please log in again.')
+                return redirect('login')
+                
+        return self.get(request, *args, **kwargs)
 
 @login_required
 def ClientRestrict(request):

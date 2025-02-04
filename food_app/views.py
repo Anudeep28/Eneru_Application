@@ -77,10 +77,13 @@ class AnalyzeImageView(FoodAppAccessMixin, generic.View):
         
         try:
             # Open and transform image
+            print("Opening image...")
             image = Image.open(io.BytesIO(image_file.read())).convert('RGB')
+            print("Transforming image...")
             transformed_image = transforms(image).unsqueeze(0).to(device)
             
             # Make prediction
+            print("Making prediction...")
             model.eval()
             with torch.inference_mode():
                 pred_logits = model(transformed_image)
@@ -89,12 +92,16 @@ class AnalyzeImageView(FoodAppAccessMixin, generic.View):
                 pred_class = class_names[pred_label]
                 confidence = pred_probs[0][pred_label].item()
             
+            print(f"Prediction: {pred_class}, Confidence: {confidence:.2%}")
             return JsonResponse({
                 'prediction': pred_class,
                 'confidence': f"{confidence:.2%}"
             })
             
         except Exception as e:
+            import traceback
+            print(f"Error in AnalyzeImageView: {str(e)}")
+            print(traceback.format_exc())
             return JsonResponse({'error': str(e)}, status=500)
 
 # URL mappings

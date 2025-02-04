@@ -7,17 +7,15 @@ app_name = "client"
 urlpatterns = [
     path('', views.ClientListView.as_view(), name='client-list'),
 
-    path('restrict/', views.ClientRestrict, name='client-restrict'),
+    path('create/', views.ClientCreateView.as_view(), name='client-create'),
 
     path('<int:pk>/', views.ClientDetailView.as_view(), name='client-info'),
 
-    path('create/', views.ClientCreateView.as_view(), name='client-create'),
+    path('<int:pk>/update/', views.ClientUpdateView.as_view(), name='client-update'),
 
-    path('update/<int:pk>/', views.ClientUpdateView.as_view(), name='client-update'),
+    path('<int:pk>/delete/', views.ClientDeleteView.as_view(), name='client-delete'),
 
     path('assign/<int:pk>/', views.clientAssignView.as_view(), name='client-assign'),
-
-    path('delete/<int:pk>/', views.ClientDeleteView.as_view(), name='client-delete'),
 
     path('category/', views.categoryListView.as_view(), name='client-category'),
 
@@ -25,4 +23,7 @@ urlpatterns = [
 
     path('categoryDetailUpdate/<int:pk>/', views.clientCategoryupdateView.as_view(), name='client-category-update'),
 
+    path('restrict/', views.ClientRestrict, name='client-restrict'),
+
+    path('settings/', views.ClientSettingsView.as_view(), name='client-settings'),
 ]

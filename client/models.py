@@ -7,6 +7,10 @@ from django.contrib.auth.models import AbstractUser#get_user_model
 #User = get_user_model()
 # post save is executed whenn the a save function is executed
 from django.db.models.signals import post_save
+from django.utils import timezone
+from django.contrib.auth import get_user_model
+import uuid
+import json
 
 """
     .objects is caloling the model manager
@@ -181,6 +185,45 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Template(models.Model):
+    CATEGORY_CHOICES = [
+        ('LEGAL', 'Legal'),
+        ('BUSINESS', 'Business'),
+        ('ACADEMIC', 'Academic'),
+    ]
+    
+    title = models.CharField(max_length=255)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    content = models.TextField(help_text="Use {{placeholder}} syntax for dynamic fields")
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    def __str__(self):
+        return f"{self.title} ({self.get_category_display()})"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+class FilledTemplate(models.Model):
+    template = models.ForeignKey(Template, on_delete=models.PROTECT, related_name='filled_templates')
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    input_data = models.JSONField(default=dict, help_text="Stores user inputs for placeholders")
+    audio_recordings = models.JSONField(default=dict, help_text="Stores paths to audio recordings")
+    export_format = models.CharField(max_length=10, choices=[('PDF', 'PDF'), ('DOCX', 'DOCX')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    
+    def __str__(self):
+        return f"{self.template.title} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    class Meta:
+        ordering = ['-modified_at']
+        indexes = [
+            models.Index(fields=['uuid']),
+            models.Index(fields=['user', '-modified_at']),
+        ]
 
 
 # very powerful signals when some events needs to happen after an event

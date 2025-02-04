@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'enlaw/css/split-screen.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="h-screen flex flex-col">
+    <!-- Header -->
+    <div class="bg-white border-b px-6 py-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-2xl font-bold">{{ template.title }}</h1>
+            <div class="flex space-x-4">
+                <button id="save-btn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    Save Progress
+                </button>
+                <button id="export-btn" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                    Export Document
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex">
+        <!-- Original Template (Left Side) -->
+        <div class="w-1/2 bg-gray-50 p-6 overflow-auto">
+            <div class="prose max-w-none">
+                {{ template.content|safe }}
+            </div>
+        </div>
+
+        <!-- Input Form (Right Side) -->
+        <div class="w-1/2 bg-white p-6 overflow-auto">
+            <div id="input-form" class="space-y-6">
+                <!-- Dynamic form fields will be inserted here -->
+            </div>
+
+            <!-- Audio Input Section -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-4">Audio Input</h3>
+                <div class="flex items-center space-x-4">
+                    <button id="mic-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        Start Recording
+                    </button>
+                    <div id="waveform" class="flex-1 h-16"></div>
+                </div>
+                <div id="transcription-status" class="mt-2 text-sm text-gray-600"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg p-6 w-96">
+        <h2 class="text-xl font-bold mb-4">Export Document</h2>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Format</label>
+                <select id="export-format" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button onclick="closeExportModal()" 
+                        class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                    Cancel
+                </button>
+                <button onclick="exportDocument()" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'enlaw/js/wavesurfer.min.js' %}"></script>
+<script>
+let documentId = null;
+let templateId = JSON.parse(document.getElementById('template-id').textContent);
+let wavesurfer = null;
+let isRecording = false;
+
+// Initialize WaveSurfer
+document.addEventListener('DOMContentLoaded', function() {
+    wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#4A5568',
+        progressColor: '#2B6CB0',
+        cursorWidth: 1
+    });
+});
+
+// Parse template content and create input fields
+function createInputFields() {
+    const content = JSON.parse(document.getElementById('template-content').textContent);
+    const regex = /\{\{([^}]+)\}\}/g;
+    let match;
+    const form = document.getElementById('input-form');
+    form.innerHTML = ''; // Clear existing fields
+    
+    while ((match = regex.exec(content)) !== null) {
+        const fieldName = match[1].trim();
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <label class="block text-sm font-medium text-gray-700">${fieldName}</label>
+            <input type="text" name="${fieldName}" 
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                   placeholder="Enter ${fieldName}">
+        `;
+        form.appendChild(div);
+    }
+}
+
+// Save document progress
+document.getElementById('save-btn').addEventListener('click', async function() {
+    const inputs = {};
+    const form = document.getElementById('input-form');
+    form.querySelectorAll('input').forEach(input => {
+        inputs[input.name] = input.value;
+    });
+
+    const url = documentId 
+        ? `/enlaw/save/${documentId}/`
+        : `/enlaw/edit/${templateId}/`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ inputs })
+        });
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            if (!documentId) {
+                documentId = data.document_id;
+            }
+            showNotification('Document saved successfully');
+        }
+    } catch (error) {
+        showNotification('Error saving document', 'error');
+    }
+});
+
+// Audio recording and transcription
+document.getElementById('mic-btn').addEventListener('click', function() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+});
+
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        const audioChunks = [];
+
+        mediaRecorder.addEventListener('dataavailable', event => {
+            audioChunks.push(event.data);
+        });
+
+        mediaRecorder.addEventListener('stop', async () => {
+            const audioBlob = new Blob(audioChunks);
+            await transcribeAudio(audioBlob);
+        });
+
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('mic-btn').textContent = 'Stop Recording';
+        document.getElementById('mic-btn').classList.replace('bg-red-500', 'bg-gray-500');
+    } catch (error) {
+        showNotification('Error accessing microphone', 'error');
+    }
+}
+
+function stopRecording() {
+    isRecording = false;
+    document.getElementById('mic-btn').textContent = 'Start Recording';
+    document.getElementById('mic-btn').classList.replace('bg-gray-500', 'bg-red-500');
+}
+
+async function transcribeAudio(audioBlob) {
+    const formData = new FormData();
+    formData.append('audio', audioBlob);
+
+    try {
+        const response = await fetch('/transcribe/', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        
+        if (data.text) {
+            const activeInput = document.activeElement;
+            if (activeInput && activeInput.tagName === 'INPUT') {
+                activeInput.value = data.text;
+            }
+        }
+    } catch (error) {
+        showNotification('Error transcribing audio', 'error');
+    }
+}
+
+// Export functionality
+document.getElementById('export-btn').addEventListener('click', function() {
+    document.getElementById('export-modal').classList.remove('hidden');
+});
+
+function closeExportModal() {
+    document.getElementById('export-modal').classList.add('hidden');
+}
+
+async function exportDocument() {
+    if (!documentId) {
+        showNotification('Please save the document first', 'error');
+        return;
+    }
+
+    const format = document.getElementById('export-format').value;
+    try {
+        const response = await fetch(`/enlaw/export/${documentId}/?format=${format}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            window.location.href = data.download_url;
+            closeExportModal();
+        }
+    } catch (error) {
+        showNotification('Error exporting document', 'error');
+    }
+}
+
+// Utility functions
+function showNotification(message, type = 'success') {
+    // Implementation depends on your notification system
+    console.log(`${type}: ${message}`);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize the page
+createInputFields();
+</script>
+<!-- Store template data -->
+{{ template.id|json_script:"template-id" }}
+{{ template.content|json_script:"template-content" }}
+{% endblock %}

@@ -3,47 +3,48 @@
       
       {% if not request.user.is_authenticated %}
       <nav class="flex lg:w-2/5 flex-wrap items-center text-base md:ml-auto">
-        <a href="{% url 'signup' %}" class="hover:text-gray-900">Sign Up</a>
+        <a href="{% url 'signup' %}" class="mr-5 hover:text-gray-900">Sign Up</a>
+        <a href="{% url 'login' %}" class="hover:text-gray-900">Login</a>
       </nav>
-      
       {% endif %}
+      
       <a href="{% url 'landing-page' %}" class="flex order-first lg:order-none lg:w-1/5 title-font font-medium items-center text-gray-900 lg:items-center lg:justify-center mb-4 md:mb-0">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-10 h-10 text-white p-2 bg-indigo-500 rounded-full" viewBox="0 0 24 24">
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
         </svg>
         <span class="ml-3 text-xl">Eneru Technologies</span>
       </a>
+
       {% if request.user.is_authenticated %}
-       
-       <div class="lg:w-4/5 inline-flex lg:justify-end ml-5 lg:ml-0">
-        {% if request.user.is_chitfund_owner %}
-          <a href="{% url 'kuries:chitfund-list' %}" class="ml-5 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Chitfunds 
-          </a>
-          <a href="{% url 'client:client-category' %}" class="ml-5 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Categories 
-          </a>
-        {% endif %}
-        <a href="{% url 'client:client-list' %}" class="ml-5 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Clients 
-        </a>
-        <a class="ml-3 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Logged in as: {{ request.user.username }} 
-        </a>
-        <form method="POST" action="{% url 'logout' %}">
-        {% csrf_token %}
-        <button type="submit" class="ml-5 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Logout
-          <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-1" viewBox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7"></path>
-          </svg>
-        </button>
-      </form>
-      </div>
-      {% else %}
-      <div class="lg:w-2/5 inline-flex lg:justify-end ml-5 lg:ml-0">
-        <a href="{% url 'login' %}" class="ml-5 inline-flex items-center bg-gray-100 border-0 py-1 px-3 focus:outline-none hover:bg-gray-200 rounded text-base mt-4 md:mt-0">Login
-          <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-1" viewBox="0 0 24 24">
-        <path d="M5 12h14M12 5l7 7-7 7"></path>
-          </svg>
-        </a>
-        
-      </div>
+      <nav class="lg:w-2/5 flex flex-wrap items-center text-base md:ml-auto">
+        <!-- User Menu -->
+        <div class="relative ml-auto" id="userMenu">
+          <button onclick="toggleDropdown()" class="flex items-center hover:text-gray-900 py-2 px-3 rounded-md focus:outline-none">
+            <span class="mr-2">{{ request.user.username }}</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          <div id="userDropdown" class="absolute right-0 hidden bg-white border rounded-lg shadow-lg py-2 mt-1 w-48 z-50">
+            <a href="{% url 'client:client-settings' %}" class="block px-4 py-3 hover:bg-gray-100 transition-colors duration-200 flex items-center">
+              <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              Settings
+            </a>
+            <form method="POST" action="{% url 'logout' %}" class="block">
+              {% csrf_token %}
+              <button type="submit" class="w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors duration-200 flex items-center">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Logout
+              </button>
+            </form>
+          </div>
+        </div>
+      </nav>
       {% endif %}
     </div>
 </header>

@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'ocr_app',
     'transcribe_app',
     'food_app',
+    'enlaw',  # Add the EnLaw app
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',
@@ -232,3 +233,10 @@ if not DEBUG:
     EMAIL_PORT = os.getenv('EMAIL_PORT')
     EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+# Disable caching temporarily
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}

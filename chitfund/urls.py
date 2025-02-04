@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .view import landing_page
+from .view import LandingPageView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth.views import (LoginView,
@@ -29,7 +29,7 @@ from client.views import ClientsignupView
 # Namespace to identify the app we are using if we have multiple apps
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',landing_page.as_view(), name='landing-page'),
+    path('', LandingPageView.as_view(), name='landing-page'),
     # Apps usrls
     path('client/', include('client.urls', namespace="client" )),
     path('kuries/', include('kuries.urls', namespace="kuries" )),
@@ -38,6 +38,7 @@ urlpatterns = [
     path('ocr/', include('ocr_app.urls', namespace='ocr_app')),
     path('transcribe/', include('transcribe_app.urls', namespace='transcribe_app')),
     path('food/', include('food_app.urls', namespace='food_app')),
+    path('enlaw/', include('enlaw.urls')),
     # login
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),

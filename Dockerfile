@@ -37,6 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gfortran \
     libopenblas-dev \
     netcat-openbsd \
+    wkhtmltopdf \
+    xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a virtual environment
@@ -49,21 +51,30 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip and install wheel
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install Python dependencies
+# Copy requirements file
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy project files
 COPY . .
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
+# Create necessary directories
+RUN mkdir -p /app/media /app/static
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Set entrypoint
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Create wrapper script for wkhtmltopdf with xvfb
+RUN echo '#!/bin/bash\nxvfb-run -a --server-args="-screen 0, 1024x768x24" /usr/bin/wkhtmltopdf $*' > /usr/local/bin/wkhtmltopdf.sh \
+    && chmod +x /usr/local/bin/wkhtmltopdf.sh
 
-# Run gunicorn
+# Set the wkhtmltopdf wrapper as the default wkhtmltopdf
+ENV WKHTMLTOPDF_CMD=/usr/local/bin/wkhtmltopdf.sh
+
+# Expose port
+EXPOSE 8000
+
+# Start Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "chitfund.wsgi:application"]

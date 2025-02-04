@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Document Template Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        header { text-align: center; margin-bottom: 40px; }
+        h1 { font-size: 2.5em; margin: 0; }
+        section { margin-bottom: 30px; }
+        h2 { font-size: 1.8em; border-bottom: 2px solid #444; padding-bottom: 5px; }
+        p { text-align: justify; }
+        footer { text-align: center; font-size: 0.9em; color: #888; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Judicial Proceedings Act</h1>
+        <p><strong>Section I: Preliminary Provisions</strong></p>
+    </header>
+    
+    <section>
+        <h2>Article 1: Purpose and Scope</h2>
+        <p>This document serves as an example law template for judicial proceedings. The provisions herein are designed to accord procedural justice and outline the responsibilities of 
+        <input type="text" class="border p-1" placeholder="{{ responsible_party }}">
+        .</p>
+    </section>
+
+    <section>
+        <h2>Article 2: Definitions</h2>
+        <p>For the purposes of this act, the following terms shall have the following meanings: 
+            <br><strong>Judiciary:</strong> <span class="editable-field" data-field="judiciary_def">{{ judiciary_definition }}</span>
+            <br><strong>Proceedings:</strong> <span class="editable-field" data-field="proceedings_def">{{ proceedings_definition }}</span>
+        </p>
+    </section>
+
+    <section>
+        <h2>Article 3: General Provisions</h2>
+        <p>All actions taken within the scope of this act are subject to the due process of law. Parties are required to adhere to established legal standards and procedures.</p>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 Legal Framework. All rights reserved.</p>
+    </footer>
+</body>
+</html>
