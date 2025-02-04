@@ -1,0 +1,71 @@
+{
+    "title": "Form W-9: Request for Taxpayer Identification Number and Certification",
+    "description": "IRS Form W-9 for requesting taxpayer identification information",
+    "variables": {
+        "name": {
+            "label": "1. Name (as shown on your income tax return)",
+            "type": "text",
+            "required": true,
+            "description": "Name is required on this line; do not leave this line blank",
+            "placeholder": "Enter your full legal name"
+        },
+        "business_name": {
+            "label": "2. Business name/disregarded entity name, if different from above",
+            "type": "text",
+            "required": false,
+            "description": "Enter business name if different from individual name",
+            "placeholder": "Enter business name (if applicable)"
+        },
+        "tax_classification": {
+            "label": "3. Federal tax classification",
+            "type": "select",
+            "required": true,
+            "options": [
+                "Individual/sole proprietor",
+                "C Corporation",
+                "S Corporation",
+                "Partnership",
+                "Trust/estate",
+                "Limited liability company"
+            ],
+            "description": "Check appropriate box for federal tax classification"
+        },
+        "llc_tax_classification": {
+            "label": "LLC tax classification",
+            "type": "select",
+            "required": false,
+            "depends_on": {
+                "field": "tax_classification",
+                "value": "Limited liability company"
+            },
+            "options": [
+                "C - C corporation",
+                "S - S corporation",
+                "P - Partnership"
+            ],
+            "description": "For LLCs, enter the tax classification"
+        },
+        "address": {
+            "label": "5. Address (number, street, and apt. or suite no.)",
+            "type": "text",
+            "required": true,
+            "description": "Enter your street address",
+            "placeholder": "Enter street address"
+        },
+        "city_state_zip": {
+            "label": "6. City, state, and ZIP code",
+            "type": "text",
+            "required": true,
+            "description": "Enter your city, state, and ZIP code",
+            "placeholder": "Enter city, state, and ZIP"
+        },
+        "account_numbers": {
+            "label": "7. List account number(s) here (optional)",
+            "type": "text",
+            "required": false,
+            "description": "Optional account numbers",
+            "placeholder": "Enter account numbers (optional)"
+        }
+    },
+    "content": "<div class=\"w9-form bg-white p-8 border rounded-lg shadow-sm max-w-4xl mx-auto\"><div class=\"form-header border-b pb-4 mb-6\"><h1 class=\"text-2xl font-bold mb-2\">Form W-9</h1><h2 class=\"text-xl mb-1\">Request for Taxpayer Identification Number and Certification</h2><p class=\"text-gray-600 text-sm\">Rev. December 2014</p></div><div class=\"form-section mb-6 border-b pb-4\"><div class=\"input-group mb-4\"><label class=\"block font-semibold mb-2\">{{name.label}}</label><input type=\"text\" class=\"w-full border rounded p-2\" value=\"{{name}}\"></div><div class=\"input-group mb-4\"><label class=\"block font-semibold mb-2\">{{business_name.label}}</label><input type=\"text\" class=\"w-full border rounded p-2\" value=\"{{business_name}}\"></div></div><div class=\"form-section mb-6 border-b pb-4\"><label class=\"block font-semibold mb-2\">{{tax_classification.label}}</label><div class=\"grid grid-cols-2 gap-4\">{{#each tax_classification.options}}<div class=\"flex items-center\"><input type=\"radio\" name=\"tax_classification\" value=\"{{this}}\" class=\"mr-2\"><label>{{this}}</label></div>{{/each}}</div></div><div class=\"form-section mb-6 border-b pb-4\"><div class=\"input-group mb-4\"><label class=\"block font-semibold mb-2\">{{address.label}}</label><input type=\"text\" class=\"w-full border rounded p-2\" value=\"{{address}}\"></div><div class=\"input-group mb-4\"><label class=\"block font-semibold mb-2\">{{city_state_zip.label}}</label><input type=\"text\" class=\"w-full border rounded p-2\" value=\"{{city_state_zip}}\"></div></div><div class=\"form-section\"><div class=\"input-group\"><label class=\"block font-semibold mb-2\">{{account_numbers.label}}</label><input type=\"text\" class=\"w-full border rounded p-2\" value=\"{{account_numbers}}\"></div></div></div>"
+}

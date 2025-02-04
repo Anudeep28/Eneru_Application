@@ -1,0 +1,37 @@
+{
+    "title": "Sample Legal Document",
+    "description": "A basic legal document template with variables",
+    "variables": {
+        "party_name": {
+            "label": "Party Name",
+            "type": "text",
+            "required": true,
+            "description": "Full name of the party"
+        },
+        "party_address": {
+            "label": "Party Address",
+            "type": "textarea",
+            "required": true,
+            "description": "Complete address of the party"
+        },
+        "case_number": {
+            "label": "Case Number",
+            "type": "text",
+            "required": true,
+            "description": "Official case number"
+        },
+        "case_subject": {
+            "label": "Subject Matter",
+            "type": "text",
+            "required": true,
+            "description": "Brief description of the case subject"
+        },
+        "case_details": {
+            "label": "Case Details",
+            "type": "textarea",
+            "required": true,
+            "description": "Detailed description of the case"
+        }
+    },
+    "content": "IN THE COURT OF [COURT_NAME]\n\nCase No: {% raw %}{{ case_number }}{% endraw %}\n\nIN THE MATTER OF:\n{% raw %}{{ party_name }}{% endraw %}\nResiding at:\n{% raw %}{{ party_address }}{% endraw %}\n\nSUBJECT: {% raw %}{{ case_subject }}{% endraw %}\n\nDETAILS OF THE CASE:\n\n{% raw %}{{ case_details }}{% endraw %}\n\nDate: [CURRENT_DATE]\n\nSignature: ________________\nName: {% raw %}{{ party_name }}{% endraw %}"
+}

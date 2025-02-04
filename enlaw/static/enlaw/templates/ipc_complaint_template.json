@@ -1,0 +1,55 @@
+{
+    "title": "Indian Penal Code - Criminal Complaint",
+    "description": "Template for filing a criminal complaint under the Indian Penal Code",
+    "variables": {
+        "complainant_name": {
+            "label": "Complainant's Name",
+            "type": "text",
+            "required": true,
+            "description": "Full name of the person filing the complaint"
+        },
+        "complainant_address": {
+            "label": "Complainant's Address",
+            "type": "textarea",
+            "required": true,
+            "description": "Complete address of the complainant"
+        },
+        "accused_name": {
+            "label": "Accused's Name",
+            "type": "text",
+            "required": true,
+            "description": "Full name of the accused person"
+        },
+        "accused_address": {
+            "label": "Accused's Address",
+            "type": "textarea",
+            "required": false,
+            "description": "Address of the accused person (if known)"
+        },
+        "incident_date": {
+            "label": "Date of Incident",
+            "type": "date",
+            "required": true,
+            "description": "Date when the incident occurred"
+        },
+        "incident_place": {
+            "label": "Place of Incident",
+            "type": "text",
+            "required": true,
+            "description": "Location where the incident occurred"
+        },
+        "incident_description": {
+            "label": "Description of Incident",
+            "type": "textarea",
+            "required": true,
+            "description": "Detailed description of what happened"
+        },
+        "applicable_sections": {
+            "label": "Applicable IPC Sections",
+            "type": "text",
+            "required": true,
+            "description": "Relevant sections of IPC that were violated"
+        }
+    },
+    "content": "IN THE COURT OF THE CHIEF JUDICIAL MAGISTRATE AT [COURT_LOCATION]\n\nCriminal Complaint No. _______ of [YEAR]\n\nIN THE MATTER OF:\n\n{{complainant_name}}\nR/o: {{complainant_address}}\n...COMPLAINANT\n\nVERSUS\n\n{{accused_name}}\nR/o: {{accused_address}}\n...ACCUSED\n\nCOMPLAINT UNDER SECTION {{applicable_sections}} OF THE INDIAN PENAL CODE\n\nMOST RESPECTFULLY SHOWETH:\n\n1. That the Complainant is a law-abiding citizen of India, residing at the above-mentioned address.\n\n2. That the accused is also residing at the above-mentioned address.\n\n3. That on {{incident_date}}, at {{incident_place}}, the following incident occurred:\n\n{{incident_description}}\n\n4. That the above-mentioned acts of the accused constitute offence(s) under Section {{applicable_sections}} of the Indian Penal Code.\n\n5. That this Hon'ble Court has jurisdiction to try and entertain this complaint.\n\nPRAYER:\n\nIt is, therefore, most respectfully prayed that this Hon'ble Court may be pleased to:\n\na) Take cognizance of this complaint and proceed against the accused for the offence(s) mentioned above;\nb) Pass any other order which this Hon'ble Court may deem fit and proper in the interest of justice.\n\nPlace: [LOCATION]\nDate: [CURRENT_DATE]\n\nCOMPLAINANT\n{{complainant_name}}\n\nVERIFICATION:\n\nVerified at [LOCATION] on this [DATE] that the contents of the above complaint are true and correct to the best of my knowledge and belief.\n\nCOMPLAINANT\n{{complainant_name}}"
+}

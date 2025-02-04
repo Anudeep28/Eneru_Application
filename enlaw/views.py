@@ -48,50 +48,83 @@ class TemplateDetailView(LoginRequiredMixin, DetailView):
         return context
 
 @login_required
-def edit_document(request, template_id=None, document_id=None):
-    context = {}
-    
-    if document_id:
-        document = get_object_or_404(Document, id=document_id, created_by=request.user)
-        context['document'] = document
-        context['template'] = Template.objects.get(id=document.template_source) if document.template_source.isdigit() else None
-    elif template_id:
-        template = get_object_or_404(Template, id=template_id)
-        context['template'] = template
-        context['variables'] = template.variables.all()
-    
-    if request.method == 'POST':
-        try:
-            title = request.POST.get('document_title', 'Untitled Document')
-            content = request.POST.get('content', '')
+def edit_document(request, template_id=None, template_path=None, document_id=None):
+    if template_path:
+        # Handle static template
+        # Try both with and without .html extension
+        template_paths = [
+            os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates', template_path),
+            os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates', template_path.replace('.html', '.json'))
+        ]
+        
+        template_data = None
+        template_file_path = None
+        for path in template_paths:
+            try:
+                with open(path, 'r') as f:
+                    template_data = json.load(f)
+                    template_file_path = path
+                break
+            except (FileNotFoundError, json.JSONDecodeError):
+                continue
+        
+        if not template_data:
+            raise Http404("Template not found or invalid")
+        
+        if request.method == 'POST':
+            # Create a new document from the static template
             variable_values = {}
-            
-            # Collect variable values from form
             for field_name, value in request.POST.items():
                 if field_name.startswith('var_'):
                     variable_name = field_name[4:]  # Remove 'var_' prefix
                     variable_values[variable_name] = value
             
-            if document_id:
-                document.title = title
-                document.content = content
-                document.variable_values = variable_values
-                document.save()
-            else:
-                document = Document.objects.create(
-                    title=title,
-                    content=content,
-                    template_source=template_id,
-                    created_by=request.user,
-                    variable_values=variable_values
-                )
+            document = Document.objects.create(
+                title=request.POST.get('document_title', template_data.get('title', 'Untitled')),
+                content=template_data.get('content', ''),
+                template_source=template_file_path,
+                created_by=request.user,
+                variable_values=variable_values,
+                status='draft'
+            )
             
-            return redirect('enlaw:document_detail', document_id=document.id)
-            
-        except ValidationError as e:
-            context['errors'] = e.message_dict
+            return redirect('enlaw:edit_document', document_id=document.id)
+        
+        template = {
+            'title': template_data.get('title', 'Untitled'),
+            'content': template_data.get('content', ''),
+            'variables': template_data.get('variables', {})
+        }
+        
+        context = {
+            'template': template,
+            'document_id': document_id,
+            'is_static': True
+        }
+        
+        return render(request, 'enlaw/edit_document.html', context)
     
-    return render(request, 'enlaw/document_editor.html', context)
+    elif template_id:
+        # Handle database template
+        template = get_object_or_404(Template, pk=template_id)
+        document = None
+        
+        if document_id:
+            document = get_object_or_404(Document, pk=document_id)
+            if document.created_by != request.user:
+                raise Http404("Document not found")
+        
+        context = {
+            'template': template,
+            'document': document,
+            'document_id': document_id,
+            'is_static': False
+        }
+        
+        return render(request, 'enlaw/edit_document.html', context)
+    
+    else:
+        raise Http404("No template specified")
 
 @login_required
 @require_http_methods(["POST"])
@@ -196,19 +229,59 @@ def list_static_templates(request):
     return render(request, 'enlaw/template_list.html', {'templates': templates})
 
 def edit_static_template(request, template_path):
-    templates_dir = os.path.join(settings.BASE_DIR, 'static', 'enlaw', 'templates')
+    templates_dir = os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates')
     filepath = os.path.join(templates_dir, template_path)
-
-    if os.path.exists(filepath):
-        with open(filepath, 'r') as file:
-            content = file.read()
-    else:
-        content = 'File not found'
-
-    template = {
-        'id': '',
-        'title': template_path,
-        'category': 'Static',
-        'content': content
-    }
-    return render(request, 'enlaw/template_preview.html', {'template': template})
+    
+    try:
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"Template file not found: {template_path}")
+            
+        with open(filepath, 'r', encoding='utf-8') as file:
+            if filepath.endswith('.json'):
+                try:
+                    template_data = json.load(file)
+                    template = {
+                        'id': '',
+                        'title': template_data.get('title', template_path),
+                        'category': 'Static',
+                        'content': template_data.get('content', ''),
+                        'variables': template_data.get('variables', {})
+                    }
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON template file: {e}")
+            else:
+                content = file.read()
+                # For HTML templates, we'll look for variables in the format {{variable_name}}
+                variables = {}
+                for match in re.finditer(r'\{\{\s*([^}]+)\s*\}\}', content):
+                    var_name = match.group(1).strip()
+                    variables[var_name] = {
+                        'label': var_name.replace('_', ' ').title(),
+                        'type': 'text',
+                        'required': True
+                    }
+                
+                template = {
+                    'id': '',
+                    'title': os.path.splitext(template_path)[0].replace('_', ' ').title(),
+                    'category': 'Static',
+                    'content': content,
+                    'variables': variables
+                }
+        
+        context = {
+            'template': template,
+            'document_id': request.GET.get('document_id', '')
+        }
+        return render(request, 'enlaw/edit_document.html', context)
+        
+    except Exception as e:
+        return render(request, 'enlaw/edit_document.html', {
+            'template': {
+                'id': '',
+                'title': 'Error Loading Template',
+                'category': 'Static',
+                'content': str(e),
+                'variables': {}
+            }
+        })

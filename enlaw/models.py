@@ -54,11 +54,22 @@ class Document(models.Model):
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     variable_values = models.JSONField(default=dict)
+    unique_no = models.CharField(max_length=50, unique=True, blank=True)  # New field for unique number
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
+        # Generate unique number if not set
+        if not self.unique_no:
+            # Format: DOC-YYYY-MM-USERID-XXXX
+            from django.utils import timezone
+            import random
+            now = timezone.now()
+            user_id = self.created_by.id if self.created_by else 0
+            random_suffix = ''.join([str(random.randint(0, 9)) for _ in range(4)])
+            self.unique_no = f"DOC-{now.year}-{now.month:02d}-{user_id}-{random_suffix}"
+        
         # Validate variable values before saving
         if self.template_source.isdigit():
             template = Template.objects.get(id=int(self.template_source))
