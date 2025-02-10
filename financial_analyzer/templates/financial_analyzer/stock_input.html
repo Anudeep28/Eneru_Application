@@ -52,7 +52,7 @@
                     </div>
 
                     <!-- Manual URL Input (hidden by default) -->
-                    <div id="manualUrlInput" class="hidden">
+                    <div id="manualUrlInput" style="display: none;">
                         <label for="manualUrl" class="block text-sm font-medium text-gray-700">Website URL</label>
                         <input type="url" id="manualUrl" name="manualUrl"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
@@ -70,7 +70,7 @@
                     </div>
 
                     <!-- Custom Query Input (hidden by default) -->
-                    <div id="customQueryInput" class="hidden">
+                    <div id="customQueryInput" style="display: none;">
                         <label for="customQuery" class="block text-sm font-medium text-gray-700">Your Question</label>
                         <textarea id="customQuery" name="customQuery" rows="3"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -79,8 +79,7 @@
 
                     <!-- Submit Button -->
                     <div>
-                        <button type="submit"
-                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             Analyze Stock
                         </button>
                     </div>
@@ -90,41 +89,37 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const dataSourceSelect = document.getElementById('dataSource');
-        const manualUrlInput = document.getElementById('manualUrlInput');
-        const analysisTypeSelect = document.getElementById('analysisType');
-        const customQueryInput = document.getElementById('customQueryInput');
+document.addEventListener('DOMContentLoaded', function() {
+    const dataSourceSelect = document.getElementById('dataSource');
+    const manualUrlInput = document.getElementById('manualUrlInput');
+    const manualUrlField = document.getElementById('manualUrl');
+    
+    const analysisTypeSelect = document.getElementById('analysisType');
+    const customQueryInput = document.getElementById('customQueryInput');
+    const customQueryField = document.getElementById('customQuery');
 
-        // Toggle manual URL input visibility
-        dataSourceSelect.addEventListener('change', function() {
-            manualUrlInput.classList.toggle('hidden', this.value !== 'manual');
-            if (this.value === 'manual') {
-                document.getElementById('manualUrl').required = true;
-            } else {
-                document.getElementById('manualUrl').required = false;
-            }
-        });
-
-        // Toggle custom query input visibility
-        analysisTypeSelect.addEventListener('change', function() {
-            customQueryInput.classList.toggle('hidden', this.value !== 'custom');
-            if (this.value === 'custom') {
-                document.getElementById('customQuery').required = true;
-            } else {
-                document.getElementById('customQuery').required = false;
-            }
-        });
-
-        // Form submission handling
-        document.getElementById('stockAnalysisForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            // Add your form submission logic here
-        });
+    // Handle Data Source changes
+    dataSourceSelect.addEventListener('change', function() {
+        if (this.value === 'manual') {
+            manualUrlInput.style.display = 'block';
+            manualUrlField.required = true;
+        } else {
+            manualUrlInput.style.display = 'none';
+            manualUrlField.required = false;
+        }
     });
+
+    // Handle Analysis Type changes
+    analysisTypeSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customQueryInput.style.display = 'block';
+            customQueryField.required = true;
+        } else {
+            customQueryInput.style.display = 'none';
+            customQueryField.required = false;
+        }
+    });
+});
 </script>
 {% endblock %}
