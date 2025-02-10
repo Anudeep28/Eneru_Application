@@ -40,7 +40,8 @@ class ClientsignupView(generic.CreateView):
                 'app_ocr': 'is_ocr_app_user',
                 'app_transcribe': 'is_transcribe_app_user',
                 'app_chatbot': 'is_chatbot_user',
-                'app_kuries': 'is_kuries_user'
+                'app_kuries': 'is_kuries_user',
+                'app_financial': 'is_financial_analyzer_user'
             }
             
             # Set the user permissions based on selected apps

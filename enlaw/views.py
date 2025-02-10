@@ -51,24 +51,20 @@ class TemplateDetailView(LoginRequiredMixin, DetailView):
 def edit_document(request, template_id=None, template_path=None, document_id=None):
     if template_path:
         # Handle static template
-        # Try both with and without .html extension
-        template_paths = [
-            os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates', template_path),
-            os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates', template_path.replace('.html', '.json'))
-        ]
+        # Clean up template path and ensure it ends with .json
+        template_path = template_path.replace('.html', '.json')
+        if not template_path.endswith('.json'):
+            template_path += '.json'
+            
+        template_file_path = os.path.join(settings.BASE_DIR, 'enlaw', 'static', 'enlaw', 'templates', template_path)
+        print(f"Loading template from: {template_file_path}")  # Debug print
         
-        template_data = None
-        template_file_path = None
-        for path in template_paths:
-            try:
-                with open(path, 'r') as f:
-                    template_data = json.load(f)
-                    template_file_path = path
-                break
-            except (FileNotFoundError, json.JSONDecodeError):
-                continue
-        
-        if not template_data:
+        try:
+            with open(template_file_path, 'r', encoding='utf-8') as f:
+                template_data = json.load(f)
+                print(f"Template data loaded: {json.dumps(template_data, indent=2)}")  # Debug print
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error loading template: {str(e)}")  # Debug print
             raise Http404("Template not found or invalid")
         
         if request.method == 'POST':
@@ -90,18 +86,12 @@ def edit_document(request, template_id=None, template_path=None, document_id=Non
             
             return redirect('enlaw:edit_document', document_id=document.id)
         
-        template = {
-            'title': template_data.get('title', 'Untitled'),
-            'content': template_data.get('content', ''),
-            'variables': template_data.get('variables', {})
-        }
-        
         context = {
-            'template': template,
+            'template': template_data,
             'document_id': document_id,
-            'is_static': True
+            'template_json': json.dumps(template_data)
         }
-        
+        print(f"Context data: {json.dumps(context, indent=2)}")  # Debug print
         return render(request, 'enlaw/edit_document.html', context)
     
     elif template_id:

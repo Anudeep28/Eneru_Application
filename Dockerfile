@@ -63,6 +63,12 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p /app/media /app/static
 
+# Ensure entrypoint script has correct line endings and is executable
+RUN apt-get update && apt-get install -y dos2unix \
+    && dos2unix /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh \
+    && rm -rf /var/lib/apt/lists/*
+
 # Collect static files
 RUN python manage.py collectstatic --noinput
 

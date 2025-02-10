@@ -35,6 +35,7 @@ class User(AbstractUser):
     is_transcribe_app_user = models.BooleanField(default=False)
     is_chatbot_user = models.BooleanField(default=False)
     is_kuries_user = models.BooleanField(default=False)
+    is_financial_analyzer_user = models.BooleanField(default=False)
 
 
 class UserProfile(models.Model):

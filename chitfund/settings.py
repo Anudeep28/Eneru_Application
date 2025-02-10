@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'ocr_app',
     'transcribe_app',
     'food_app',
-    'enlaw',  # Add the EnLaw app
+    'enlaw',  
+    'financial_analyzer',  # new app
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',

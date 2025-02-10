@@ -32,7 +32,8 @@ urlpatterns = [
     path('', LandingPageView.as_view(), name='landing-page'),
     # Apps usrls
     path('client/', include('client.urls', namespace="client" )),
-    path('kuries/', include('kuries.urls', namespace="kuries" )),
+    path('kuries/', include('kuries.urls')),
+    path('financial/', include('financial_analyzer.urls')),
     path('namgen/', include('trial1.urls',namespace='namegen')),
     path('chatbot/', include('chatbot.urls',namespace='chatbot')),
     path('ocr/', include('ocr_app.urls', namespace='ocr_app')),

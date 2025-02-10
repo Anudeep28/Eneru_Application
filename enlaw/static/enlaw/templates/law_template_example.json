@@ -33,5 +33,5 @@
             "description": "Detailed description of the case"
         }
     },
-    "content": "IN THE COURT OF [COURT_NAME]\n\nCase No: {% raw %}{{ case_number }}{% endraw %}\n\nIN THE MATTER OF:\n{% raw %}{{ party_name }}{% endraw %}\nResiding at:\n{% raw %}{{ party_address }}{% endraw %}\n\nSUBJECT: {% raw %}{{ case_subject }}{% endraw %}\n\nDETAILS OF THE CASE:\n\n{% raw %}{{ case_details }}{% endraw %}\n\nDate: [CURRENT_DATE]\n\nSignature: ________________\nName: {% raw %}{{ party_name }}{% endraw %}"
+    "content": "IN THE COURT OF [COURT_NAME]\n\nCase No: {{case_number}}\n\nIN THE MATTER OF:\n{{party_name}}\nResiding at:\n{{party_address}}\n\nSUBJECT: {{case_subject}}\n\nDETAILS OF THE CASE:\n\n{{case_details}}\n\nDate: [CURRENT_DATE]\n\nSignature: ________________\nName: {{party_name}}"
 }
