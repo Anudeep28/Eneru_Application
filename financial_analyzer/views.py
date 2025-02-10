@@ -7,5 +7,5 @@ from .mixins import FinancialAnalyzerSubscriptionRequiredMixin
 # Create your views here.
 
 @method_decorator(login_required, name='dispatch')
-class WelcomeView(FinancialAnalyzerSubscriptionRequiredMixin, TemplateView):
-    template_name = 'financial_analyzer/welcome.html'
+class StockInputView(FinancialAnalyzerSubscriptionRequiredMixin, TemplateView):
+    template_name = 'financial_analyzer/stock_input.html'

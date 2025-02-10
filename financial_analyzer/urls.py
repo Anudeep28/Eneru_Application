@@ -4,5 +4,5 @@ from . import views
 app_name = 'financial_analyzer'
 
 urlpatterns = [
-    path('', views.WelcomeView.as_view(), name='welcome'),
+    path('', views.StockInputView.as_view(), name='stock-input'),
 ]

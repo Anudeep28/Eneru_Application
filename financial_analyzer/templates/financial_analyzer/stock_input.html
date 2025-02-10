@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial Analyzer - Stock Analysis{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-12">
+    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="p-6">
+                <h1 class="text-3xl font-bold text-blue-800 mb-6">Stock Analysis</h1>
+                
+                <form id="stockAnalysisForm" class="space-y-6">
+                    <!-- Stock/Ticker Input -->
+                    <div>
+                        <label for="stock" class="block text-sm font-medium text-gray-700">Stock/Ticker Symbol</label>
+                        <input type="text" id="stock" name="stock" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Date and Quarter Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                            <input type="date" id="date" name="date" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="quarter" class="block text-sm font-medium text-gray-700">Quarter</label>
+                            <select id="quarter" name="quarter" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Select Quarter</option>
+                                <option value="Q1">Q1</option>
+                                <option value="Q2">Q2</option>
+                                <option value="Q3">Q3</option>
+                                <option value="Q4">Q4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Data Source Selection -->
+                    <div>
+                        <label for="dataSource" class="block text-sm font-medium text-gray-700">Data Source</label>
+                        <select id="dataSource" name="dataSource" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Select Data Source</option>
+                            <option value="yahoo">Yahoo Finance</option>
+                            <option value="investing">Investing.com</option>
+                            <option value="marketwatch">MarketWatch</option>
+                            <option value="seekingalpha">SeekingAlpha</option>
+                            <option value="manual">Manual Input</option>
+                        </select>
+                    </div>
+
+                    <!-- Manual URL Input (hidden by default) -->
+                    <div id="manualUrlInput" class="hidden">
+                        <label for="manualUrl" class="block text-sm font-medium text-gray-700">Website URL</label>
+                        <input type="url" id="manualUrl" name="manualUrl"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Analysis Type Selection -->
+                    <div>
+                        <label for="analysisType" class="block text-sm font-medium text-gray-700">Analysis Type</label>
+                        <select id="analysisType" name="analysisType" required
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Select Analysis Type</option>
+                            <option value="summary">Summary</option>
+                            <option value="custom">Custom Query</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Query Input (hidden by default) -->
+                    <div id="customQueryInput" class="hidden">
+                        <label for="customQuery" class="block text-sm font-medium text-gray-700">Your Question</label>
+                        <textarea id="customQuery" name="customQuery" rows="3"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Enter your specific question about the stock..."></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Analyze Stock
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dataSourceSelect = document.getElementById('dataSource');
+        const manualUrlInput = document.getElementById('manualUrlInput');
+        const analysisTypeSelect = document.getElementById('analysisType');
+        const customQueryInput = document.getElementById('customQueryInput');
+
+        // Toggle manual URL input visibility
+        dataSourceSelect.addEventListener('change', function() {
+            manualUrlInput.classList.toggle('hidden', this.value !== 'manual');
+            if (this.value === 'manual') {
+                document.getElementById('manualUrl').required = true;
+            } else {
+                document.getElementById('manualUrl').required = false;
+            }
+        });
+
+        // Toggle custom query input visibility
+        analysisTypeSelect.addEventListener('change', function() {
+            customQueryInput.classList.toggle('hidden', this.value !== 'custom');
+            if (this.value === 'custom') {
+                document.getElementById('customQuery').required = true;
+            } else {
+                document.getElementById('customQuery').required = false;
+            }
+        });
+
+        // Form submission handling
+        document.getElementById('stockAnalysisForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Add your form submission logic here
+        });
+    });
+</script>
+{% endblock %}
