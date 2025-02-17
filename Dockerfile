@@ -57,6 +57,20 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install browser dependencies for crawl4ai
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium-browser \
+    chromium-chromedriver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install crawl4ai dependencies
+RUN pip install --no-cache-dir \
+    crawl4ai[all] \
+    playwright
+
+# Setup crawl4ai browser
+RUN python -m playwright install chromium
+
 # Copy project files
 COPY . .
 

@@ -1,125 +1,164 @@
 {% extends 'base.html' %}
 
-{% block title %}Financial Analyzer - Stock Analysis{% endblock %}
+{% block title %}Financial Analyzer - Content Analysis{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-gray-100 py-12">
-    <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
             <div class="p-6">
-                <h1 class="text-3xl font-bold text-blue-800 mb-6">Stock Analysis</h1>
+                <h1 class="text-3xl font-bold text-blue-800 mb-6">Content Analysis</h1>
                 
-                <form id="stockAnalysisForm" class="space-y-6">
-                    <!-- Stock/Ticker Input -->
+                <form id="analysisForm" class="space-y-6">
+                    {% csrf_token %}
+                    <!-- URL Input -->
                     <div>
-                        <label for="stock" class="block text-sm font-medium text-gray-700">Stock/Ticker Symbol</label>
-                        <input type="text" id="stock" name="stock" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-
-                    <!-- Date and Quarter Selection -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
-                            <input type="date" id="date" name="date" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label for="quarter" class="block text-sm font-medium text-gray-700">Quarter</label>
-                            <select id="quarter" name="quarter" required
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                                <option value="">Select Quarter</option>
-                                <option value="Q1">Q1</option>
-                                <option value="Q2">Q2</option>
-                                <option value="Q3">Q3</option>
-                                <option value="Q4">Q4</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Data Source Selection -->
-                    <div>
-                        <label for="dataSource" class="block text-sm font-medium text-gray-700">Data Source</label>
-                        <select id="dataSource" name="dataSource" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Select Data Source</option>
-                            <option value="yahoo">Yahoo Finance</option>
-                            <option value="investing">Investing.com</option>
-                            <option value="marketwatch">MarketWatch</option>
-                            <option value="seekingalpha">SeekingAlpha</option>
-                            <option value="manual">Manual Input</option>
-                        </select>
-                    </div>
-
-                    <!-- Manual URL Input (hidden by default) -->
-                    <div id="manualUrlInput" style="display: none;">
-                        <label for="manualUrl" class="block text-sm font-medium text-gray-700">Website URL</label>
-                        <input type="url" id="manualUrl" name="manualUrl"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    </div>
-
-                    <!-- Analysis Type Selection -->
-                    <div>
-                        <label for="analysisType" class="block text-sm font-medium text-gray-700">Analysis Type</label>
-                        <select id="analysisType" name="analysisType" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            <option value="">Select Analysis Type</option>
-                            <option value="summary">Summary</option>
-                            <option value="custom">Custom Query</option>
-                        </select>
-                    </div>
-
-                    <!-- Custom Query Input (hidden by default) -->
-                    <div id="customQueryInput" style="display: none;">
-                        <label for="customQuery" class="block text-sm font-medium text-gray-700">Your Question</label>
-                        <textarea id="customQuery" name="customQuery" rows="3"
+                        <label for="url" class="block text-sm font-medium text-gray-700">Website URL</label>
+                        <input type="url" id="url" name="url" required
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            placeholder="Enter your specific question about the stock..."></textarea>
+                            placeholder="https://example.com/transcript">
                     </div>
 
                     <!-- Submit Button -->
                     <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Analyze Stock
+                        <button id="analyzeButton" type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Analyze Content
                         </button>
                     </div>
                 </form>
+                
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="hidden mt-6">
+                    <div class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span class="ml-2 text-gray-600">Analyzing content...</span>
+                    </div>
+                </div>
+
+                <!-- Analysis Result -->
+                <div id="resultContainer" class="mt-6"></div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dataSourceSelect = document.getElementById('dataSource');
-    const manualUrlInput = document.getElementById('manualUrlInput');
-    const manualUrlField = document.getElementById('manualUrl');
-    
-    const analysisTypeSelect = document.getElementById('analysisType');
-    const customQueryInput = document.getElementById('customQueryInput');
-    const customQueryField = document.getElementById('customQuery');
+    const form = document.getElementById('analysisForm');
+    const submitButton = document.getElementById('analyzeButton');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const resultContainer = document.getElementById('resultContainer');
 
-    // Handle Data Source changes
-    dataSourceSelect.addEventListener('change', function() {
-        if (this.value === 'manual') {
-            manualUrlInput.style.display = 'block';
-            manualUrlField.required = true;
-        } else {
-            manualUrlInput.style.display = 'none';
-            manualUrlField.required = false;
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        submitButton.disabled = true;
+        loadingIndicator.classList.remove('hidden');
+        resultContainer.innerHTML = '';
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch('{% url "financial_analyzer:stock-input" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                displayResult(data.data);
+            } else {
+                throw new Error(data.message || 'An error occurred');
+            }
+        } catch (error) {
+            resultContainer.innerHTML = `
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p>${error.message}</p>
+                </div>
+            `;
+        } finally {
+            submitButton.disabled = false;
+            loadingIndicator.classList.add('hidden');
         }
     });
 
-    // Handle Analysis Type changes
-    analysisTypeSelect.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customQueryInput.style.display = 'block';
-            customQueryField.required = true;
-        } else {
-            customQueryInput.style.display = 'none';
-            customQueryField.required = false;
+    function displayResult(data) {
+        // Add debug output
+        console.log('Received data:', data);
+
+        // Ensure data exists and has required properties
+        if (!data) {
+            throw new Error('No data received from the server');
         }
-    });
-});
+
+        let html = '<div class="space-y-6">';
+
+        // Title and Summary Section
+        html += `
+            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">${data.title || 'No Title Available'}</h2>
+                <div class="prose max-w-none text-gray-600">
+                    <p class="mb-4">${data.summary || 'No summary available'}</p>
+                    
+                    <!-- Participants Section -->
+                    ${data.participants && data.participants.length > 0 ? `
+                        <h3 class="text-lg font-semibold mb-2">Participants</h3>
+                        <ul class="list-disc pl-5 mb-4">
+                            ${data.participants.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    
+                    <!-- Relationships Section -->
+                    ${data.relationships && data.relationships.length > 0 ? `
+                        <h3 class="text-lg font-semibold mb-2">Relationships</h3>
+                        <ul class="list-disc pl-5 mb-4">
+                            ${data.relationships.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    
+                    <!-- Topics Section -->
+                    ${data.topics && data.topics.length > 0 ? `
+                        <h3 class="text-lg font-semibold mb-2">Topics</h3>
+                        <ul class="list-disc pl-5 mb-4">
+                            ${data.topics.map(t => `<li>${t}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    
+                    <!-- Dialogue Section -->
+                    ${data.dialogue && data.dialogue.length > 0 ? `
+                        <h3 class="text-lg font-semibold mb-2">Dialogue</h3>
+                        <div class="space-y-4">
+                            ${data.dialogue.map(d => `
+                                <div class="border-l-4 border-blue-500 pl-4">
+                                    <p class="font-semibold">${d.speaker}</p>
+                                    <p>${d.message}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<p>No dialogue available</p>'}
+                </div>
+            </div>
+        `;
+
+        html += '</div>';
+        resultContainer.innerHTML = html;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 </script>
 {% endblock %}

@@ -30,7 +30,7 @@ scipy  # Updated for Python 3.11 compatibility
 datasets  # For Audio dataset handling
 
 # Google AI Dependencies
-google-generativeai
+google-generativeai>=0.3.0
 together  # Updated to latest stable version
 
 # Audio Processing
@@ -45,17 +45,20 @@ Pillow
 pdf2image
 openpyxl
 
+# financial analyzer
+requests  # For making HTTP requests
+aiofiles>=22.0,<24.0  # Added to resolve dependency conflict with gradio
+crawl4ai
+playwright  # Required for crawl4ai browser automation
+
 # Web and API
 fastapi
-uvicorn
+uvicorn[standard]  # For ASGI support
 aiohttp
+beautifulsoup4  # For parsing HTML content
 
 # Utilities
 python-dotenv
 tqdm
 beautifulsoup4
 PyYAML
-
-# NLP
-spacy
-en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
