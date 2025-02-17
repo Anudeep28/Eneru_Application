@@ -2,11 +2,16 @@ from django.shortcuts import render
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from asgiref.sync import sync_to_async
 import json
+import asyncio
 from pydantic import BaseModel, Field
 from typing import List
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig, CacheMode, LXMLWebScrapingStrategy
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
+
 
 class DialogueMessage(BaseModel):
     speaker: str = Field(..., description="Name of the speaker")
@@ -94,19 +99,7 @@ async def extract_conversation(url: str, api_token: str):
                         'message': 'Failed to parse the extracted content'
                     }
             
-            # Handle case where content is a list
-            if isinstance(content, list):
-                if not content:
-                    return {
-                        'error': True,
-                        'message': 'No content was extracted'
-                    }
-                content = content[0]  # Take the first item if it's a list
-            
-            return {
-                'error': False,
-                'data': content
-            }
+            return content
             
         except Exception as e:
             return {
@@ -114,47 +107,76 @@ async def extract_conversation(url: str, api_token: str):
                 'message': f'Error during crawling: {str(e)}'
             }
 
+@method_decorator(login_required, name='dispatch')
 class ConversationView(View):
-    async def get(self, request):
-        from asgiref.sync import sync_to_async
-        from django.template.loader import render_to_string
-        
-        template = await sync_to_async(render_to_string)(
-            'financial_analyzer/stock_input.html',
-            {'request': request}
-        )
-        from django.http import HttpResponse
-        return HttpResponse(template)
-    
-    async def post(self, request):
-        from asgiref.sync import sync_to_async
-        
-        url = await sync_to_async(request.POST.get)('url')
-        if not url:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'URL is required'
-            })
-        
-        api_token = await sync_to_async(lambda: settings.GEMINI_API_KEY)()
-        if not api_token:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'API token not configured'
-            })
-        
+    def get(self, request):
+        return render(request, 'financial_analyzer/stock_input.html')
+
+    def post(self, request):
         try:
-            result = await extract_conversation(url, api_token)
-            if result.get('error'):
+            url = request.POST.get('url')
+            
+            if not url:
                 return JsonResponse({
                     'status': 'error',
-                    'message': result.get('message', 'Failed to extract content')
+                    'message': 'URL is required'
+                })
+
+            api_token = settings.GEMINI_API_KEY
+            
+            # Run the async function in a synchronous context
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result = loop.run_until_complete(extract_conversation(url, api_token))
+            finally:
+                loop.close()
+            
+            # Check if result is None or empty
+            if not result:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No content was extracted from the URL'
                 })
             
-            return JsonResponse({
+            # Handle case where result is a string (error message)
+            if isinstance(result, str):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': result
+                })
+            
+            # Handle case where result is a list
+            if isinstance(result, list):
+                if not result:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'No content was extracted'
+                    })
+                result = result[0]  # Take the first item if it's a list
+            
+            # Handle case where result is a dict with error
+            if isinstance(result, dict) and result.get('error'):
+                return JsonResponse({
+                    'status': 'error',
+                    'message': result.get('message', 'Failed to analyze content')
+                })
+            
+            # Ensure we have the expected data structure
+            response_data = {
                 'status': 'success',
-                'data': result.get('data', {})
-            })
+                'data': {
+                    'title': result.get('title', 'No Title Available'),
+                    'participants': result.get('participants', []),
+                    'dialogue': result.get('dialogue', []),
+                    'relationships': result.get('relationships', []),
+                    'summary': result.get('summary', 'No summary available'),
+                    'topics': result.get('topics', [])
+                }
+            }
+            
+            return JsonResponse(response_data)
+            
         except Exception as e:
             return JsonResponse({
                 'status': 'error',

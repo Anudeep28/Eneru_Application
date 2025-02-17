@@ -67,7 +67,7 @@
 
             const data = await response.json();
             
-            if (data.status === 'success') {
+            if (data.status === 'success' && data.data) {
                 displayResult(data.data);
             } else {
                 throw new Error(data.message || 'An error occurred');
@@ -85,10 +85,6 @@
     });
 
     function displayResult(data) {
-        // Add debug output
-        console.log('Received data:', data);
-
-        // Ensure data exists and has required properties
         if (!data) {
             throw new Error('No data received from the server');
         }
