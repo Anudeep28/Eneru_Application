@@ -23,7 +23,7 @@ class AppAccessMixin(AccessMixin):
             
         if not getattr(request.user, self.app_permission):
             messages.error(request, f"You are not authorized to use the {self.app_name} app. Please subscribe to access this feature.", extra_tags=f'unauthorized_{self.app_name.lower().replace(" ", "_")}')
-            return redirect('home')
+            return redirect('landing-page')
             
         return super().dispatch(request, *args, **kwargs)
 
@@ -55,6 +55,10 @@ class KuriesAccessMixin(AppAccessMixin):
     app_permission = 'is_kuries_user'
     app_name = 'Kuries'
 
+class FinancialAnalyzerAccessMixin(AppAccessMixin):
+    app_permission = 'is_financial_analyzer_user'
+    app_name = 'Financial Analyzer'
+
 class ClientLoginRequiredMixin(AccessMixin):
     """Verify that the current user is authenticated and the owner."""
 
@@ -76,7 +80,7 @@ class SubscriptionRequiredMixin:
         if not getattr(request.user, self.app_permission):
             messages.error(request, f"You are not authorized to use the {self.app_name} app. Please subscribe to access this feature.", 
                          extra_tags=f'unauthorized_{self.app_name.lower().replace(" ", "_")}')
-            return redirect('landing')
+            return redirect('landing-page')
         
         return super().dispatch(request, *args, **kwargs)
 
@@ -107,3 +111,7 @@ class ChatbotSubscriptionRequiredMixin(SubscriptionRequiredMixin):
 class KuriesSubscriptionRequiredMixin(SubscriptionRequiredMixin):
     app_permission = 'is_kuries_user'
     app_name = 'Kuries'
+
+class FinancialAnalyzerSubscriptionRequiredMixin(SubscriptionRequiredMixin):
+    app_permission = 'is_financial_analyzer_user'
+    app_name = 'Financial Analyzer'

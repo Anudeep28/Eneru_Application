@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.decorators import method_decorator
 from asgiref.sync import sync_to_async
 import json
@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig, CacheMode, LXMLWebScrapingStrategy
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
+from client.mixins import FinancialAnalyzerAccessMixin
 
 
 class DialogueMessage(BaseModel):
@@ -107,8 +108,7 @@ async def extract_conversation(url: str, api_token: str):
                 'message': f'Error during crawling: {str(e)}'
             }
 
-@method_decorator(login_required, name='dispatch')
-class ConversationView(View):
+class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
     def get(self, request):
         return render(request, 'financial_analyzer/stock_input.html')
 
