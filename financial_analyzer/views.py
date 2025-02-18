@@ -35,8 +35,8 @@ class ConversationStructure(BaseModel):
 async def extract_conversation(url: str, api_token: str):
     browser_config = BrowserConfig(
         headless=True,
-        # text_mode=True,
-        java_script_enabled=True
+        text_mode=True,
+        # java_script_enabled=True
     )
 
     crawler_config = CrawlerRunConfig(
@@ -66,7 +66,7 @@ async def extract_conversation(url: str, api_token: str):
                 {"name": "Person Name"}
             ],
             "role": [
-                {"role": "Person Role"}
+                {"role": "The Person's Role (CEO, CTO, Worker etc.)"}
             ],
             "dialogue": [
                 {

@@ -115,7 +115,7 @@
                             ${data.role && data.role.length > 0 ? `
                                 <h3 class="text-lg font-semibold mb-2">Roles</h3>
                                 <ul class="list-disc pl-5">
-                                    ${data.role.map(r => `<li>${r}</li>`).join('')}
+                                    ${data.role.map(r => `<li>${typeof r === 'object' ? r.role : r}</li>`).join('')}
                                 </ul>
                             ` : ''}
                         </div>
