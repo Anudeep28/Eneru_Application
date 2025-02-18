@@ -98,13 +98,28 @@
                 <div class="prose max-w-none text-gray-600">
                     <p class="mb-4">${data.summary || 'No summary available'}</p>
                     
-                    <!-- Participants Section -->
-                    ${data.participants && data.participants.length > 0 ? `
-                        <h3 class="text-lg font-semibold mb-2">Participants</h3>
-                        <ul class="list-disc pl-5 mb-4">
-                            ${data.participants.map(p => `<li>${p}</li>`).join('')}
-                        </ul>
-                    ` : ''}
+                    <!-- Participants and Roles Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <!-- Participants Column -->
+                        <div>
+                            ${data.participants && data.participants.length > 0 ? `
+                                <h3 class="text-lg font-semibold mb-2">Participants</h3>
+                                <ul class="list-disc pl-5">
+                                    ${data.participants.map(p => `<li>${p}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                        
+                        <!-- Roles Column -->
+                        <div>
+                            ${data.role && data.role.length > 0 ? `
+                                <h3 class="text-lg font-semibold mb-2">Roles</h3>
+                                <ul class="list-disc pl-5">
+                                    ${data.role.map(r => `<li>${r}</li>`).join('')}
+                                </ul>
+                            ` : ''}
+                        </div>
+                    </div>
                     
                     <!-- Relationships Section -->
                     ${data.relationships && data.relationships.length > 0 ? `
