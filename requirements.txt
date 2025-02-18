@@ -47,8 +47,8 @@ openpyxl
 
 # financial analyzer
 requests  # For making HTTP requests
-aiofiles>=22.0,<24.0  # Added to resolve dependency conflict with gradio
-crawl4ai
+aiofiles>=24.1.0  # Updated to be compatible with crawl4ai
+crawl4ai==0.4.248
 playwright  # Required for crawl4ai browser automation
 
 # Web and API
