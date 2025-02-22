@@ -26,6 +26,9 @@ class DialogueMessage(BaseModel):
     sequence: int = Field(..., description="Order in the conversation")
 
 class ConversationStructure(BaseModel):
+    company: str = Field(..., description="Company Name")
+    year: str = Field(..., description="Year of the conversation")
+    quarter: str = Field(..., description="which Quarter of year was the conversation recorded")
     title: str = Field(..., description="Title of the conversation")
     participants: List[str] = Field(..., description="List of Participants in the conversation")
     role: List[str] = Field(..., description="Roles of participants in the conversation (Guest, CEO, CTO, etc.)")
@@ -50,8 +53,8 @@ async def extract_conversation(url: str, api_token: str):
 
     # bm25 filter before making the mnarkdown from html
     bm25_filter = BM25ContentFilter(
-        user_query="Earnings transcript containing Participants with their Roles and Questions and answers, also participants spoken dialogue and conversation structure",
-        bm25_threshold=1.2
+        # user_query="Earnings transcript containing Participants with their Roles and Questions and answers, also participants spoken dialogue and conversation structure",
+        # bm25_threshold=1.2
     )
 
     # Mardown generator for fit_markdown
@@ -78,8 +81,12 @@ async def extract_conversation(url: str, api_token: str):
             apply_chunking=True,
             # verbose=True,
             instruction="""Given the company earnings call transcript, 
-            extract and structure the information in order with the following format:
+            extract and structure the information in order (ex. presentation/conference call session, then Question
+            and Answers session) with the following format:
         {
+            "company": "Company Name",
+            "year": "Year of the conversation",
+            "quarter": "which Quarter of year was the conversation recorded",
             "title": "Title of the earnings call",
             "participants": [
                 {"name": "Participant Name"}
@@ -102,7 +109,7 @@ async def extract_conversation(url: str, api_token: str):
         Important:
         - Extract ALL dialogue messages in chronological order
         - Include Participant names and roles exactly as mentioned
-        - Maintain accuratechunk sequence numbers and order
+        - Maintain accurate sequence numbers and order
         - Ensure the output is a valid JSON object
         """,
             input_format="fit_markdown",
@@ -116,7 +123,7 @@ async def extract_conversation(url: str, api_token: str):
         )
 
     crawler_config = CrawlerRunConfig(
-        cache_mode=CacheMode.ENABLED,
+        cache_mode=CacheMode.BYPASS,
         # wait_for="css:#site-content",
         excluded_tags=['script', 'style', 'meta', 'link', 'noscript', 'iframe'],
         exclude_external_images=True,
@@ -161,6 +168,9 @@ async def extract_conversation(url: str, api_token: str):
                     if isinstance(parsed_content, list):
                         # Initialize merged structure
                         merged_content = {
+                            "company": "",
+                            "year": "",
+                            "quarter": "",
                             "title": "",
                             "participants": [],
                             "role": [],
@@ -173,6 +183,15 @@ async def extract_conversation(url: str, api_token: str):
                         for chunk in parsed_content:
                             # No need for json.loads here since it's already parsed
                             if isinstance(chunk, dict):
+                                # Company name
+                                if not merged_content["company"] and "company" in chunk:
+                                    merged_content["company"] = chunk["company"]
+                                # year
+                                if not merged_content["year"] and "year" in chunk:
+                                    merged_content["year"] = chunk["year"]
+                                # quarter
+                                if not merged_content["quarter"] and "quarter" in chunk:
+                                    merged_content["quarter"] = chunk["quarter"]
                                 # Merge the data
                                 if not merged_content["title"] and "title" in chunk:
                                     merged_content["title"] = chunk["title"]
@@ -287,6 +306,9 @@ class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
                 response_data = {
                     'status': 'success',
                     'data': {
+                        'company': result.get('company', 'No Company Name Available'),
+                        'year': result.get('year', 'No Year Available'),
+                        'quarter': result.get('quarter', 'No Quarter Available'),
                         'title': result.get('title', 'No Title Available'),
                         'participants': result.get('participants', []),
                         'role': result.get('role', []),

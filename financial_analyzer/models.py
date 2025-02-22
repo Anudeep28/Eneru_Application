@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
 # from pgvector.django import VectorField
+from pgvector.django import VectorField
 
 # Create your models here.
 
