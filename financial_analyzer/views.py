@@ -16,6 +16,9 @@ from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import BM25ContentFilter
 from client.mixins import FinancialAnalyzerAccessMixin
 
+# Our own RAG fucntion
+from .services.rag_utils import process_website_data
+
 
 # Configure logging
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -123,7 +126,7 @@ async def extract_conversation(url: str, api_token: str):
         )
 
     crawler_config = CrawlerRunConfig(
-        cache_mode=CacheMode.BYPASS,
+        cache_mode=CacheMode.ENABLED,
         # wait_for="css:#site-content",
         excluded_tags=['script', 'style', 'meta', 'link', 'noscript', 'iframe'],
         exclude_external_images=True,
@@ -144,7 +147,10 @@ async def extract_conversation(url: str, api_token: str):
     async with AsyncWebCrawler(config=browser_config) as crawler:
         try:
             result = await crawler.arun(url=url, config=crawler_config)
-            # print("length of the chunk result :",len(result.fit_markdown))
+            print("fit markdown result :",result.fit_markdown)
+            # Creating chunks
+            process_website_data(result.fit_markdown)
+
             # print("Fit Markdown Results :",result.fit_markdown)
             if not result.extracted_content:
                 return {
@@ -153,14 +159,14 @@ async def extract_conversation(url: str, api_token: str):
                 }
             content = result.extracted_content
             # print("Extracted content Results :",content[0])
-            print("length of the chunk result :", len(content))
+            # print("length of the chunk result :", len(content))
             # full_content = " ".join([
             #     str(chunk) for chunk in result.extracted_content
             # ]) 
             llm_extraction_strategy.show_usage()
-            if result.success:
-                with open("extraction_result.json", "w", encoding="utf-8") as f:
-                    json.dump(content, f, ensure_ascii=False, indent=2)
+            # if result.success:
+            #     with open("extraction_result.json", "w", encoding="utf-8") as f:
+            #         json.dump(content, f, ensure_ascii=False, indent=2)
             
             if isinstance(content, str):
                 try:
@@ -222,7 +228,7 @@ async def extract_conversation(url: str, api_token: str):
                                     merged_content["topics"].extend(t for t in chunk["topics"] 
                                                                 if t not in merged_content["topics"])
                         
-                        print("Merged content Results:", merged_content)
+                        # print("Merged content Results:", merged_content)
                         return merged_content
                     else:
                         # If it's not a list, return the parsed content
@@ -269,7 +275,7 @@ class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
             finally:
                 loop.close()
             
-            print("Result before display to the frontend :",result)
+            # print("Result before display to the frontend :",result)
             # Check if result is None or empty
             if not result:
                 return JsonResponse({
