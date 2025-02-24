@@ -55,6 +55,9 @@ def process_website_data(website_data: WebsiteData) -> None:
             print("-" * 50)
             
         logger.info(f"Successfully processed website data") #{website_data.company}")
+        embeddings = create_embeddings(chunks)
+        print("\nFirst 1 embedding:")
+        print(embeddings[0])
         
     except Exception as e:
         logger.error(f"Error processing website data: {str(e)}")
