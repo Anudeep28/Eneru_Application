@@ -30,7 +30,7 @@ class DocumentChunk(models.Model):
     website = models.ForeignKey(WebsiteData, on_delete=models.CASCADE, related_name='chunks')
     sequence = models.PositiveIntegerField(help_text="Chunk position in document")
     content = models.TextField()
-    embedding = VectorField(dimensions=768, null=True, blank=True)
+    embedding = VectorField(dimensions=384, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

@@ -3,7 +3,9 @@ import logging
 from langchain.text_splitter import MarkdownTextSplitter
 from sentence_transformers import SentenceTransformer
 from ..models import WebsiteData, DocumentChunk
-
+from django.db import transaction
+import numpy as np
+import json
 logger = logging.getLogger(__name__)
 
 def split_markdown_into_chunks(markdown_text: str, 
@@ -37,28 +39,94 @@ def create_embeddings(text_chunks: List[str], model_name: str = 'all-MiniLM-L6-v
         logger.error(f"Error creating embeddings: {str(e)}")
         raise
 
-def process_website_data(website_data: WebsiteData) -> None:
+def process_website_data(website_data, url: str, user_id: int) -> None:
     """
     Process website data: split markdown and create embeddings
-    For now, just print chunks for verification
+    Checks if the website has been scraped before by the user
+    If new, stores website data, chunks, and embeddings in the database
+    
+    Args:
+        website_data: The dictionary containing crawler_result and extracted data
+        url: The URL of the website being processed
+        user_id: The ID of the user who initiated the scraping
     """
     try:
-        # Split markdown into chunks
-        chunks = split_markdown_into_chunks(website_data)
+        # Check if this website has been scraped before by the user
+        existing_website = WebsiteData.objects.filter(url=url, user_id=user_id).first()
         
-        # Print first few chunks for verification
-        print("\nFirst 3 chunks of the document:")
-        for i, chunk in enumerate(chunks[:3]):
-            print(f"\nChunk {i+1}:")
-            print("-" * 50)
-            print(chunk)
-            print("-" * 50)
+        if existing_website:
+            logger.info(f"Website {url} has already been scraped by this user. Using existing data.")
+            return existing_website
+        
+        # Extract necessary data from the crawler result
+        result = website_data.get('crawler_result')
+        markdown_content = result.fit_markdown
+        
+        # The extracted_content is already a dictionary, no need to parse it
+        # Remove the crawler_result to make it JSON serializable
+        serializable_content = website_data.copy()
+        if 'crawler_result' in serializable_content:
+            del serializable_content['crawler_result']
             
-        logger.info(f"Successfully processed website data") #{website_data.company}")
-        embeddings = create_embeddings(chunks)
-        print("\nFirst 1 embedding:")
-        print(embeddings[0])
+        company = website_data.get('company', 'Unknown')
+        year = website_data.get('year', 0)
+        try:
+            year = int(year)
+        except (ValueError, TypeError):
+            year = 0
+            
+        quarter = website_data.get('quarter', 'Q1')
+        title = website_data.get('title', 'No Title')
         
+        # Create a new WebsiteData entry
+        with transaction.atomic():
+            # Create website data record
+            new_website = WebsiteData.objects.create(
+                user_id=user_id,
+                url=url,
+                title=title,
+                company=company,
+                year=year,
+                quarter=quarter,
+                extracted_content=serializable_content,
+                fit_markdown=markdown_content
+            )
+            
+            # Split markdown into chunks
+            chunks = split_markdown_into_chunks(markdown_content)
+            
+            # Create embeddings for chunks
+            embeddings = create_embeddings(chunks)
+            
+            # Store chunks and embeddings in the database
+            chunk_objects = []
+            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                chunk_objects.append(DocumentChunk(
+                    website=new_website,
+                    sequence=i,
+                    content=chunk,
+                    embedding=np.array(embedding)
+                ))
+            
+            # Bulk create chunks
+            DocumentChunk.objects.bulk_create(chunk_objects)
+            
+            logger.info(f"Successfully processed and stored website data for {company} ({year} Q{quarter})")
+            
+            # # Print first few chunks for verification (debug only)
+            # print("\nFirst 3 chunks of the document:")
+            # for i, chunk in enumerate(chunks[:3]):
+            #     print(f"\nChunk {i+1}:")
+            #     print("-" * 50)
+            #     print(chunk)
+            #     print("-" * 50)
+                
+            # # Print first embedding for verification (debug only)
+            # print("\nFirst 1 embedding:")
+            # print(embeddings[0])
+            
+            return new_website
+            
     except Exception as e:
         logger.error(f"Error processing website data: {str(e)}")
         raise

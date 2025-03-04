@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 from asgiref.sync import sync_to_async
 import json
 import asyncio
+import logging
 # import logging
 from pydantic import BaseModel, Field
 from typing import List
@@ -21,7 +22,7 @@ from .services.rag_utils import process_website_data
 
 
 # Configure logging
-# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class DialogueMessage(BaseModel):
     speaker: str = Field(..., description="Name of the Participant")
@@ -42,9 +43,9 @@ class ConversationStructure(BaseModel):
 
 async def extract_conversation(url: str, api_token: str):
 
-    api_provider = "gemini/gemini-1.5-flash"
+    # api_provider = "gemini/gemini-1.5-flash"
     # api_provider = "together/deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free"
-    # api_provider = "gemini/gemini-2.0-flash"
+    api_provider = "gemini/gemini-2.0-flash"
 
     browser_config = BrowserConfig(
         headless=True,
@@ -126,7 +127,7 @@ async def extract_conversation(url: str, api_token: str):
         )
 
     crawler_config = CrawlerRunConfig(
-        cache_mode=CacheMode.ENABLED,
+        cache_mode=CacheMode.BYPASS,
         # wait_for="css:#site-content",
         excluded_tags=['script', 'style', 'meta', 'link', 'noscript', 'iframe'],
         exclude_external_images=True,
@@ -148,14 +149,17 @@ async def extract_conversation(url: str, api_token: str):
         try:
             result = await crawler.arun(url=url, config=crawler_config)
             print("fit markdown result :",result.fit_markdown)
-            # Creating chunks
-            process_website_data(result.fit_markdown)
+            # Store the original crawler result for later use in processing
+            crawler_result = result
+            
+            # The process_website_data function will be called later in the ConversationView
 
             # print("Fit Markdown Results :",result.fit_markdown)
             if not result.extracted_content:
                 return {
                     'error': True,
-                    'message': 'No content was extracted from the webpage'
+                    'message': 'No content was extracted from the webpage',
+                    'crawler_result': None
                 }
             content = result.extracted_content
             # print("Extracted content Results :",content[0])
@@ -229,25 +233,31 @@ async def extract_conversation(url: str, api_token: str):
                                                                 if t not in merged_content["topics"])
                         
                         # print("Merged content Results:", merged_content)
+                        # Add the crawler result to the merged content for later use
+                        merged_content['crawler_result'] = crawler_result
                         return merged_content
                     else:
                         # If it's not a list, return the parsed content
+                        parsed_content['crawler_result'] = crawler_result
                         return parsed_content
                         
                 except json.JSONDecodeError:
                     return {
                         'error': True,
-                        'message': 'Failed to parse the extracted content'
+                        'message': 'Failed to parse the extracted content',
+                        'crawler_result': None
                     }
             else:
                 return {
                     'error': True,
-                    'message': 'Unexpected content format'
+                    'message': 'Unexpected content format',
+                    'crawler_result': None
                 }
         except Exception as e:
             return {
                 'error': True,
-                'message': f'An error occurred while extracting the content: {str(e)}'
+                'message': f'An error occurred while extracting the content: {str(e)}',
+                'crawler_result': None
             }
 
 class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
@@ -290,16 +300,6 @@ class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
                     'message': result
                 })
             
-            # # Handle case where result is a list
-            # if isinstance(result, list):
-            #     if not result:
-            #         return JsonResponse({
-            #             'status': 'error',
-            #             'message': 'No content was extracted'
-            #         })
-                
-            #     result = result[0]  # Take the first item if it's a list
-            
             # Handle case where result is a dict with error
             if isinstance(result, dict):
                 if result.get('error'):
@@ -307,6 +307,31 @@ class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
                         'status': 'error',
                         'message': result.get('message', 'Failed to analyze content')
                     })
+                
+                # Get the crawler result from the merged content
+                crawler_result = result.get('crawler_result')
+                
+                # Process website data and store in database if crawler_result exists
+                if crawler_result:
+                    try:
+                        # Pass the crawler result, URL, and user ID to process_website_data
+                        website_data = process_website_data(
+                            website_data=result,
+                            url=url,
+                            user_id=request.user.id
+                        )
+                        
+                        logger.info(f"Successfully processed website data for URL: {url}")
+                    except Exception as e:
+                        logger.error(f"Error processing website data: {str(e)}")
+                        # Continue with the response even if there's an error with storing data
+                else:
+                    logger.warning(f"No crawler result available for processing URL: {url}")
+                
+                # Remove crawler_result from the response data to avoid sending large objects
+                if 'crawler_result' in result:
+                    del result['crawler_result']
+                
                 # If it's a valid result dict (with our conversation structure)
                 # Ensure we have the expected data structure
                 response_data = {
