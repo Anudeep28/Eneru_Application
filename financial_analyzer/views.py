@@ -3,8 +3,8 @@ from django.views import View
 from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.utils.decorators import method_decorator
-from asgiref.sync import sync_to_async
+# from django.utils.decorators import method_decorator
+# from asgiref.sync import sync_to_async
 import json
 import asyncio
 import logging
@@ -16,11 +16,11 @@ from crawl4ai.extraction_strategy import LLMExtractionStrategy, JsonCssExtractio
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import BM25ContentFilter
 from client.mixins import FinancialAnalyzerAccessMixin
-from sentence_transformers import SentenceTransformer
-import numpy as np
+# from sentence_transformers import SentenceTransformer
+# import numpy as np
 
 # Our own RAG fucntion
-from .services.rag_utils import process_website_data, retrieve_similar_chunks
+from .services.rag_utils import process_website_data, retrieve_similar_chunks, generate_response_with_gemini
 from .models import WebsiteData, DocumentChunk, UserQuery
 
 
@@ -392,16 +392,8 @@ class QueryView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
             # Retrieve the top 3 most similar chunks using RAG
             similar_chunks = retrieve_similar_chunks(user_query, website_data.id)
             
-            # Extract the content from the chunks
-            context_texts = [chunk.content for chunk in similar_chunks]
-            
-            # For now, create a simple response based on the retrieved chunks
-            # In a more advanced implementation, you would use an LLM to generate a response
-            response = f"Based on the analyzed content, here's what I found:\n\n"
-            
-            # Add the context from each chunk
-            for i, text in enumerate(context_texts):
-                response += f"Relevant information {i+1}:\n{text}\n\n"
+            # Generate a response using Gemini based on the query and retrieved context
+            response = generate_response_with_gemini(user_query, similar_chunks)
             
             # Store the query and response
             user_query_obj = UserQuery.objects.create(

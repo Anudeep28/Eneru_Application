@@ -7,6 +7,9 @@ from django.db import transaction
 import numpy as np
 import json
 from pgvector.django import L2Distance
+import google.generativeai as genai
+from django.conf import settings
+
 logger = logging.getLogger(__name__)
 
 def split_markdown_into_chunks(markdown_text: str, 
@@ -161,3 +164,50 @@ def retrieve_similar_chunks(query: str, website_id, top_k: int = 3) -> List[Docu
     except Exception as e:
         logger.error(f"Error retrieving similar chunks: {str(e)}")
         raise
+
+def generate_response_with_gemini(query: str, context_chunks: List[DocumentChunk]) -> str:
+    """
+    Generate a response using Gemini model based on the user query and retrieved context chunks
+    
+    Args:
+        query: The user query
+        context_chunks: List of DocumentChunk objects containing relevant context
+        
+    Returns:
+        Generated response from Gemini
+    """
+    try:
+        # Configure Gemini
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Prepare context from chunks
+        context_text = "\n\n".join([chunk.content for chunk in context_chunks])
+        
+        # Create prompt with query and context
+        prompt = f"""
+        You are a helpful financial analyst assistant. Answer the following question based ONLY on the provided context.
+        If you don't know the answer or if the context doesn't contain relevant information, say so.
+        
+        CONTEXT:
+        {context_text}
+        
+        QUESTION:
+        {query}
+        
+        ANSWER:
+        """
+        
+        # Generate response
+        response = model.generate_content(prompt)
+        
+        if response.text:
+            logger.info(f"Successfully generated response for query: {query}")
+            return response.text
+        else:
+            logger.warning(f"Empty response from Gemini for query: {query}")
+            return "I couldn't generate a response based on the provided information. Please try a different question."
+    
+    except Exception as e:
+        logger.error(f"Error generating response with Gemini: {str(e)}")
+        return f"An error occurred while generating the response: {str(e)}"
