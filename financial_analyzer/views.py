@@ -16,9 +16,12 @@ from crawl4ai.extraction_strategy import LLMExtractionStrategy, JsonCssExtractio
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import BM25ContentFilter
 from client.mixins import FinancialAnalyzerAccessMixin
+from sentence_transformers import SentenceTransformer
+import numpy as np
 
 # Our own RAG fucntion
-from .services.rag_utils import process_website_data
+from .services.rag_utils import process_website_data, retrieve_similar_chunks
+from .models import WebsiteData, DocumentChunk, UserQuery
 
 
 # Configure logging
@@ -359,6 +362,63 @@ class ConversationView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
             })
             
         except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            })
+
+class QueryView(LoginRequiredMixin, FinancialAnalyzerAccessMixin, View):
+    def post(self, request):
+        try:
+            # Get the user query and URL from the form
+            user_query = request.POST.get('query')
+            url = request.POST.get('url')
+            
+            if not user_query or not url:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Both query and URL are required'
+                })
+            
+            # Find the website data for this URL
+            website_data = WebsiteData.objects.filter(url=url, user_id=request.user.id).first()
+            
+            if not website_data:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'No data found for this URL. Please analyze the content first.'
+                })
+            
+            # Retrieve the top 3 most similar chunks using RAG
+            similar_chunks = retrieve_similar_chunks(user_query, website_data.id)
+            
+            # Extract the content from the chunks
+            context_texts = [chunk.content for chunk in similar_chunks]
+            
+            # For now, create a simple response based on the retrieved chunks
+            # In a more advanced implementation, you would use an LLM to generate a response
+            response = f"Based on the analyzed content, here's what I found:\n\n"
+            
+            # Add the context from each chunk
+            for i, text in enumerate(context_texts):
+                response += f"Relevant information {i+1}:\n{text}\n\n"
+            
+            # Store the query and response
+            user_query_obj = UserQuery.objects.create(
+                user=request.user,
+                query=user_query,
+                response=response,
+                website=website_data
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'response': user_query_obj.response,
+                'message': 'Query processed successfully'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error processing query: {str(e)}")
             return JsonResponse({
                 'status': 'error',
                 'message': str(e)

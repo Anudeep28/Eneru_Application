@@ -5,4 +5,5 @@ app_name = 'financial_analyzer'
 
 urlpatterns = [
     path('stock-input/', views.ConversationView.as_view(), name='stock-input'),
+    path('query/', views.QueryView.as_view(), name='query'),
 ]

@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="min-h-screen bg-gray-100 py-12">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
             <div class="p-6">
                 <h1 class="text-3xl font-bold text-blue-800 mb-6">Content Analysis</h1>
@@ -36,8 +36,49 @@
                     </div>
                 </div>
 
-                <!-- Analysis Result -->
-                <div id="resultContainer" class="mt-6"></div>
+                <!-- Two-column layout for results and query section -->
+                <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Analysis Result Column (2/3 width on large screens) -->
+                    <div id="resultContainer" class="lg:col-span-2"></div>
+                    
+                    <!-- Query Section Column (1/3 width on large screens) -->
+                    <div id="querySection" class="hidden lg:col-span-1">
+                        <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm sticky top-6">
+                            <h2 class="text-xl font-bold text-blue-800 mb-4">Ask a Question</h2>
+                            <p class="text-gray-600 mb-4">Have a question about the content? Ask here and get insights based on the analyzed text.</p>
+                            
+                            <form id="queryForm" class="space-y-4">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="userQuery" class="block text-sm font-medium text-gray-700">Your Question</label>
+                                    <textarea id="userQuery" name="query" rows="3" required
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        placeholder="Ask something about the content..."></textarea>
+                                </div>
+                                
+                                <input type="hidden" id="websiteUrl" name="url" value="">
+                                
+                                <div>
+                                    <button id="queryButton" type="submit"
+                                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        Submit Question
+                                    </button>
+                                </div>
+                            </form>
+                        
+                            <!-- Query Loading Indicator -->
+                            <div id="queryLoadingIndicator" class="hidden mt-4">
+                                <div class="flex items-center justify-center">
+                                    <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                                    <span class="ml-2 text-gray-600">Processing your question...</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Query Result -->
+                            <div id="queryResultContainer" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -48,12 +89,20 @@
     const submitButton = document.getElementById('analyzeButton');
     const loadingIndicator = document.getElementById('loadingIndicator');
     const resultContainer = document.getElementById('resultContainer');
+    const querySection = document.getElementById('querySection');
+    const queryForm = document.getElementById('queryForm');
+    const queryButton = document.getElementById('queryButton');
+    const queryLoadingIndicator = document.getElementById('queryLoadingIndicator');
+    const queryResultContainer = document.getElementById('queryResultContainer');
+    const websiteUrlInput = document.getElementById('websiteUrl');
 
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         submitButton.disabled = true;
         loadingIndicator.classList.remove('hidden');
         resultContainer.innerHTML = '';
+        querySection.classList.add('hidden');
+        queryResultContainer.innerHTML = '';
 
         try {
             const formData = new FormData(form);
@@ -69,6 +118,10 @@
             
             if (data.status === 'success' && data.data) {
                 displayResult(data.data);
+                
+                // Show query section and set the URL for the query
+                querySection.classList.remove('hidden');
+                websiteUrlInput.value = document.getElementById('url').value;
             } else {
                 throw new Error(data.message || 'An error occurred');
             }
@@ -81,6 +134,54 @@
         } finally {
             submitButton.disabled = false;
             loadingIndicator.classList.add('hidden');
+        }
+    });
+    
+    // Handle query form submission
+    queryForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        queryButton.disabled = true;
+        queryLoadingIndicator.classList.remove('hidden');
+        queryResultContainer.innerHTML = '';
+
+        try {
+            const formData = new FormData(queryForm);
+            const response = await fetch('{% url "financial_analyzer:query" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Convert line breaks to HTML breaks for proper display
+                const formattedResponse = data.response.replace(/\n\n/g, '</p><p>')
+                                                      .replace(/Relevant information (\d+):/g, '<strong class="text-blue-700">Relevant information $1:</strong>')
+                                                      .replace(/\n/g, '<br>');
+                
+                queryResultContainer.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 shadow-sm">
+                        <h3 class="text-lg font-semibold text-green-800 mb-2">Answer</h3>
+                        <div class="prose max-w-none text-gray-700 space-y-4">
+                            ${formattedResponse}
+                        </div>
+                    </div>
+                `;
+            } else {
+                throw new Error(data.message || 'An error occurred');
+            }
+        } catch (error) {
+            queryResultContainer.innerHTML = `
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p>${error.message}</p>
+                </div>
+            `;
+        } finally {
+            queryButton.disabled = false;
+            queryLoadingIndicator.classList.add('hidden');
         }
     });
 

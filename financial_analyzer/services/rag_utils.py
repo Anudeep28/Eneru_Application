@@ -6,6 +6,7 @@ from ..models import WebsiteData, DocumentChunk
 from django.db import transaction
 import numpy as np
 import json
+from pgvector.django import L2Distance
 logger = logging.getLogger(__name__)
 
 def split_markdown_into_chunks(markdown_text: str, 
@@ -129,4 +130,34 @@ def process_website_data(website_data, url: str, user_id: int) -> None:
             
     except Exception as e:
         logger.error(f"Error processing website data: {str(e)}")
+        raise
+
+def retrieve_similar_chunks(query: str, website_id, top_k: int = 3) -> List[DocumentChunk]:
+    """
+    Retrieve the top k most similar chunks for a given query
+    
+    Args:
+        query: The user query
+        website_id: The ID of the website to search within
+        top_k: Number of chunks to retrieve (default: 3)
+        
+    Returns:
+        List of DocumentChunk objects that are most similar to the query
+    """
+    try:
+        # Create embedding for the query
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        query_embedding = np.array(model.encode([query])[0])
+        
+        # Retrieve the most similar chunks using pgvector
+        similar_chunks = DocumentChunk.objects.filter(
+            website_id=website_id
+        ).order_by(
+            L2Distance('embedding', query_embedding)
+        )[:top_k]
+        
+        logger.info(f"Retrieved {len(similar_chunks)} similar chunks for query: {query}")
+        return similar_chunks
+    except Exception as e:
+        logger.error(f"Error retrieving similar chunks: {str(e)}")
         raise
