@@ -151,7 +151,7 @@ async def extract_conversation(url: str, api_token: str):
     async with AsyncWebCrawler(config=browser_config) as crawler:
         try:
             result = await crawler.arun(url=url, config=crawler_config)
-            print("fit markdown result :",result.fit_markdown)
+            # print("fit markdown result :",result.fit_markdown)
             # Store the original crawler result for later use in processing
             crawler_result = result
             
