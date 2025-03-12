@@ -1,0 +1,68 @@
+# Django Application Windsurf Rules
+
+# Define Django project structure
+project_structure:
+  - apps:
+    - financial_analyzer
+    - chatbot
+    - chitfund (this is project folder with settings.py file)
+    - enlaw
+    - food_app
+    - kuries
+    - ocr_app
+    - transcribe_app
+    - trial1
+  - static_files:
+    - static
+    - static_root
+  - templates:
+    - templates
+
+# Django model relationships
+model_relationships:
+  - understand_django_models: true
+  - track_foreign_keys: true
+  - track_many_to_many: true
+
+# Django URL patterns
+url_patterns:
+  - understand_url_patterns: true
+  - track_view_functions: true
+
+# Django template understanding
+template_understanding:
+  - track_template_inheritance: true
+  - understand_template_tags: true
+  - link_templates_to_views: true
+
+# Django settings
+settings:
+  - track_installed_apps: true
+  - understand_middleware: true
+  - track_database_config: true
+
+# Code generation preferences
+code_generation:
+  - follow_django_conventions: true
+  - use_class_based_views: true
+  - prefer_django_rest_framework: true
+  - use_model_serializers: true
+  - follow_pep8: true
+
+# Documentation preferences
+documentation:
+  - add_docstrings: true
+  - document_models: true
+  - document_views: true
+  - document_api_endpoints: true
+
+# debugging preferences
+  - break_problems_into_smaller_steps: true
+  - use_print_statements_and_logging_to_debug: true
+
+# Security preferences
+security:
+  - use_csrf_protection: true
+  - sanitize_user_input: true
+  - use_django_permissions: true
+  - follow_security_best_practices: true

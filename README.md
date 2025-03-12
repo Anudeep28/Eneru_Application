@@ -1,47 +1,60 @@
 # Eneru Application
 
-Eneru Application is a web platform that provides access to various sub-applications tailored to meet different use cases based on user needs. This application integrates functionalities such as Optical Character Recognition (OCR), name generation, mind mapping, and more.
+Modern web platform integrating multiple Django applications for financial analysis, AI services, and business management tools.
 
-## Features
+## Featured Applications
 
-- **OCR App**: Upload images and PDFs to extract text using advanced OCR technology.
+- **Financial Analyzer**: Stock market analysis and portfolio management
+- **Chatbot**: AI-powered conversational interface
+- **Chitfund Manager**: Chit fund administration
+- **Food Recognition**: Image-based food identification
+- **OCR App**: Document text extraction
+- **Transcribe App**: Audio-to-text conversion
+- **Legal Assistant**: Contract analysis
 - **Name Generator**: Generate unique names based on specified criteria.
 - **Mind Map**: Create visual representations of ideas and concepts.
-- **Chatbot**: Interact with an AI-powered chatbot for assistance and queries.
+
+## Tech Stack
+
+- Django 4.2
+- PostgreSQL
+- PyTorch
+- Tesseract OCR
+- Django REST Framework
 
 ## Installation
 
 To set up the Eneru Application locally, follow these steps:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Anudeep28/Eneru_Application.git
-   cd Eneru_Application
-   ```
+```bash
+# Clone & setup
+gh repo clone Anudeep28/Eneru_Application
+cd Eneru_Application
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv myenv
-   myenv\Scripts\activate  # On Windows
-   ```
+# Configure environment
+cp .env.example .env
+python manage.py migrate
+python manage.py runserver
+```
 
-3. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Environment Variables
 
-4. Set up environment variables:
-   - Create a `.env` file in the root directory and add the necessary configurations (refer to the example in `.env.example`).
+Create a `.env` file with these required API keys:
 
-5. Run database migrations:
-   ```bash
-   python manage.py migrate
-   ```
+```ini
+# Gemini AI (Chatbot & Financial Analysis)
+GEMINI_API_KEY=your_gemini_key
 
-6. Start the development server:
-   ```bash
-   python manage.py runserver
-   ```
+# Together API (LLM Services)
+TOGETHER_API_KEY=your_together_key
+```
+
+Get your keys:
+- [Gemini API](https://ai.google.dev/) - Google AI Studio
+- [Together API](https://api.together.xyz/) - Together AI Platform
 
 ## Model Files
 The food recognition model file (`indian_food_model_v3.pth`) is too large for GitHub. You can download it from:

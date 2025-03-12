@@ -1,11 +1,10 @@
-from typing import List, Dict
+from typing import List
 import logging
 from langchain.text_splitter import MarkdownTextSplitter
 from sentence_transformers import SentenceTransformer
 from ..models import WebsiteData, DocumentChunk
 from django.db import transaction
 import numpy as np
-import json
 from pgvector.django import L2Distance
 import google.generativeai as genai
 from django.conf import settings
@@ -135,14 +134,14 @@ def process_website_data(website_data, url: str, user_id: int) -> None:
         logger.error(f"Error processing website data: {str(e)}")
         raise
 
-def retrieve_similar_chunks(query: str, website_id, top_k: int = 3) -> List[DocumentChunk]:
+def retrieve_similar_chunks(query: str, website_id, top_k: int = 5) -> List[DocumentChunk]:
     """
     Retrieve the top k most similar chunks for a given query
     
     Args:
         query: The user query
         website_id: The ID of the website to search within
-        top_k: Number of chunks to retrieve (default: 3)
+        top_k: Number of chunks to retrieve (default: 5)
         
     Returns:
         List of DocumentChunk objects that are most similar to the query

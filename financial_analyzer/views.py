@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import View
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 # from django.utils.decorators import method_decorator
@@ -11,8 +11,8 @@ import logging
 # import logging
 from pydantic import BaseModel, Field
 from typing import List
-from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig, CacheMode, LXMLWebScrapingStrategy
-from crawl4ai.extraction_strategy import LLMExtractionStrategy, JsonCssExtractionStrategy
+from crawl4ai import AsyncWebCrawler, CrawlerRunConfig, BrowserConfig, CacheMode
+from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from crawl4ai.markdown_generation_strategy import DefaultMarkdownGenerator
 from crawl4ai.content_filter_strategy import BM25ContentFilter
 from client.mixins import FinancialAnalyzerAccessMixin
@@ -21,7 +21,7 @@ from client.mixins import FinancialAnalyzerAccessMixin
 
 # Our own RAG fucntion
 from .services.rag_utils import process_website_data, retrieve_similar_chunks, generate_response_with_gemini
-from .models import WebsiteData, DocumentChunk, UserQuery
+from .models import WebsiteData, UserQuery
 
 
 # Configure logging
