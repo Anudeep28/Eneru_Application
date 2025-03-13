@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+        <!-- Template Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-2">{{ template.title }}</h1>
+            <p class="text-gray-600">{{ template.subtitle|default:"" }}</p>
+        </div>
+        
+        <!-- Form -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Document Title -->
+                <div>
+                    <label for="document_title" class="block text-sm font-medium text-gray-700 mb-1">
+                        Document Title <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="document_title" name="document_title" 
+                           value="{{ template.title }}" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                
+                <!-- Legal Document with Editable Fields -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Legal Document</h3>
+                    <div class="bg-gray-50 p-6 rounded-md border border-gray-200 legal-document">
+                        <div class="text-center mb-6">
+                            <p class="font-bold">IN THE COURT OF THE CHIEF JUDICIAL MAGISTRATE AT [COURT_LOCATION]</p>
+                            <p>Criminal Complaint No. _______ of [YEAR]</p>
+                        </div>
+                        
+                        <p class="font-bold mb-4">IN THE MATTER OF:</p>
+                        
+                        <div class="mb-4">
+                            <div class="mb-2">
+                                <label for="complainant_name" class="block text-sm font-medium text-gray-700">Complainant Name:</label>
+                                <input type="text" id="complainant_name" name="var_complainant_name" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="complainant_address" class="block text-sm font-medium text-gray-700">Complainant Address:</label>
+                                <textarea id="complainant_address" name="var_complainant_address" rows="2"
+                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                            </div>
+                            <p class="text-right font-bold mt-1">...COMPLAINANT</p>
+                        </div>
+                        
+                        <p class="text-center font-bold my-4">VERSUS</p>
+                        
+                        <div class="mb-4">
+                            <div class="mb-2">
+                                <label for="accused_name" class="block text-sm font-medium text-gray-700">Accused Name:</label>
+                                <input type="text" id="accused_name" name="var_accused_name" 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label for="accused_address" class="block text-sm font-medium text-gray-700">Accused Address:</label>
+                                <textarea id="accused_address" name="var_accused_address" rows="2"
+                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                            </div>
+                            <p class="text-right font-bold mt-1">...ACCUSED</p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <p class="font-bold mb-2">COMPLAINT UNDER SECTION 
+                                <input type="text" id="applicable_sections" name="var_applicable_sections" 
+                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            OF THE INDIAN PENAL CODE</p>
+                        </div>
+                        
+                        <p class="font-bold mb-4">MOST RESPECTFULLY SHOWETH:</p>
+                        
+                        <ol class="list-decimal pl-6 space-y-4">
+                            <li>That the Complainant is a law-abiding citizen of India, residing at the above-mentioned address.</li>
+                            
+                            <li>That the accused is also residing at the above-mentioned address.</li>
+                            
+                            <li>That on 
+                                <input type="date" id="incident_date" name="var_incident_date" 
+                                       class="inline-block w-auto px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">, 
+                                at 
+                                <input type="text" id="incident_place" name="var_incident_place" 
+                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">, 
+                                the following incident occurred:
+                                <div class="mt-2">
+                                    <textarea id="incident_description" name="var_incident_description" rows="5"
+                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                                </div>
+                            </li>
+                            
+                            <li>That the above-mentioned acts of the accused constitute offence(s) under Section 
+                                <input type="text" id="applicable_sections_repeat" name="var_applicable_sections_repeat" 
+                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                of the Indian Penal Code.
+                            </li>
+                            
+                            <li>That this Hon'ble Court has jurisdiction to try and entertain this complaint.</li>
+                        </ol>
+                        
+                        <div class="mt-6">
+                            <p class="font-bold mb-2">PRAYER:</p>
+                            <p class="mb-4">It is, therefore, most respectfully prayed that this Hon'ble Court may be pleased to:</p>
+                            
+                            <ol class="list-[lower-alpha] pl-6 space-y-2">
+                                <li>Take cognizance of this complaint and proceed against the accused for the offence(s) mentioned above;</li>
+                                <li>Pass any other order which this Hon'ble Court may deem fit and proper in the interest of justice.</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="mt-6 grid grid-cols-2">
+                            <div>
+                                <p>Place: [LOCATION]</p>
+                                <p>Date: [CURRENT_DATE]</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="mb-1">COMPLAINANT</p>
+                                <p id="complainant_name_display"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 border-t pt-4">
+                            <p class="font-bold mb-2">VERIFICATION:</p>
+                            <p class="mb-4">Verified at [LOCATION] on this [DATE] that the contents of the above complaint are true and correct to the best of my knowledge and belief.</p>
+                            
+                            <div class="text-right">
+                                <p class="mb-1">COMPLAINANT</p>
+                                <p id="complainant_name_verify_display"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        Create Document
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-fill repeated fields
+    document.addEventListener('DOMContentLoaded', function() {
+        const complainantNameInput = document.getElementById('complainant_name');
+        const applicableSectionsInput = document.getElementById('applicable_sections');
+        
+        // Update complainant name displays
+        complainantNameInput.addEventListener('input', function() {
+            document.getElementById('complainant_name_display').textContent = this.value;
+            document.getElementById('complainant_name_verify_display').textContent = this.value;
+        });
+        
+        // Copy applicable sections to repeated field
+        applicableSectionsInput.addEventListener('input', function() {
+            document.getElementById('applicable_sections_repeat').value = this.value;
+        });
+    });
+</script>
+{% endblock %}

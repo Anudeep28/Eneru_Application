@@ -1,0 +1,52 @@
+{
+  "title": "Law Template",
+  "subtitle": "Standard Legal Document Template",
+  "content": "This is a standard legal document template that can be customized with variables.\n\nClient Name: {{client_name}}\nCase Number: {{case_number}}\nDate: {{date}}\n\nThis agreement is made between {{party_a}} and {{party_b}} for the purpose of {{purpose}}.\n\nTerms and Conditions:\n1. {{term_1}}\n2. {{term_2}}\n3. {{term_3}}\n\nSigned by:\n\n_________________\n{{client_name}}",
+  "variables": {
+    "client_name": {
+      "label": "Client Name",
+      "type": "text",
+      "required": true
+    },
+    "case_number": {
+      "label": "Case Number",
+      "type": "text",
+      "required": true
+    },
+    "date": {
+      "label": "Date",
+      "type": "date",
+      "required": true
+    },
+    "party_a": {
+      "label": "Party A",
+      "type": "text",
+      "required": true
+    },
+    "party_b": {
+      "label": "Party B",
+      "type": "text",
+      "required": true
+    },
+    "purpose": {
+      "label": "Purpose",
+      "type": "textarea",
+      "required": true
+    },
+    "term_1": {
+      "label": "Term 1",
+      "type": "textarea",
+      "required": false
+    },
+    "term_2": {
+      "label": "Term 2",
+      "type": "textarea",
+      "required": false
+    },
+    "term_3": {
+      "label": "Term 3",
+      "type": "textarea",
+      "required": false
+    }
+  }
+}

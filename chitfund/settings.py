@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # installed 3rd party apps
     'crispy_forms',
     'crispy_tailwind',
+    'django_htmx',
 
     # for static files
     'whitenoise.runserver_nostatic',

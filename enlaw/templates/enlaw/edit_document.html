@@ -117,6 +117,11 @@
 
 {% block content %}
 <div class="document-container">
+    <div id="debug-info" style="background-color: #f8f9fa; padding: 10px; margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 4px; display: none;">
+        <h4>Debug Information</h4>
+        <pre id="debug-content" style="white-space: pre-wrap;"></pre>
+    </div>
+    
     {{ template_json|json_script:"template-data" }}
     
     <div class="document-header">
@@ -124,16 +129,17 @@
         <p class="document-subtitle">{{ template.subtitle|default:"" }}</p>
     </div>
     
-    <form id="document-form">
+    <form id="document-form" method="post">
+        {% csrf_token %}
         <div class="document-content" id="document-body">
             <!-- Content will be dynamically inserted here -->
         </div>
+        
+        <div class="action-buttons">
+            <button type="submit" class="action-button">Save Document</button>
+            <button type="button" class="action-button" onclick="document.getElementById('export-modal').classList.remove('hidden')">Export</button>
+        </div>
     </form>
-</div>
-
-<div class="action-buttons">
-    <button class="action-button" onclick="saveDocument()">Save Draft</button>
-    <button class="action-button" onclick="document.getElementById('export-modal').classList.remove('hidden')">Export</button>
 </div>
 
 <!-- Export Modal -->
@@ -157,149 +163,299 @@
 
 {% block extra_js %}
 <script>
+// Show debug info in development
+const showDebug = true;
+
+function debugLog(message, data) {
+    if (showDebug) {
+        console.log(message, data);
+        const debugInfo = document.getElementById('debug-info');
+        const debugContent = document.getElementById('debug-content');
+        
+        if (debugInfo && debugContent) {
+            debugInfo.style.display = 'block';
+            let content = debugContent.innerHTML;
+            content += message + ': ';
+            
+            if (data !== undefined) {
+                if (typeof data === 'object') {
+                    content += JSON.stringify(data, null, 2);
+                } else {
+                    content += data;
+                }
+            }
+            
+            content += '\n\n';
+            debugContent.innerHTML = content;
+        }
+    }
+}
+
 (function() {
     try {
-        const templateData = JSON.parse(document.getElementById('template-data').textContent);
+        debugLog('Script started');
+        
+        // Get template data from the script tag
+        const templateDataElement = document.getElementById('template-data');
+        if (!templateDataElement) {
+            debugLog('Template data element not found');
+            return;
+        }
+        
+        debugLog('Template data element found', templateDataElement.textContent);
+        
+        let templateData;
+        try {
+            templateData = JSON.parse(templateDataElement.textContent);
+            debugLog('Template data parsed', templateData);
+        } catch (e) {
+            debugLog('Error parsing template data', e.message);
+            return;
+        }
+        
         const documentId = '{{ document_id }}';
         const csrfToken = '{{ csrf_token }}';
+        const documentBody = document.getElementById('document-body');
+        
+        if (!documentBody) {
+            debugLog('Document body element not found');
+            return;
+        }
+        
+        debugLog('Document body element found');
 
         // Function to create an editable field
         function createEditableField(name, field) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'editable-field' + (field.required ? ' required-field' : '');
+            debugLog('Creating field', { name, field });
             
-            const label = document.createElement('div');
-            label.className = 'field-label';
-            label.textContent = field.label;
+            const fieldContainer = document.createElement('div');
+            fieldContainer.className = 'mb-4';
             
-            const input = field.type === 'textarea' 
-                ? document.createElement('textarea')
-                : document.createElement('input');
+            const label = document.createElement('label');
+            label.setAttribute('for', 'var_' + name);
+            label.className = 'block text-sm font-medium text-gray-700 mb-1';
+            label.textContent = field.label || name.replace('_', ' ').title();
+            
+            if (field.required) {
+                const requiredSpan = document.createElement('span');
+                requiredSpan.className = 'text-red-500 ml-1';
+                requiredSpan.textContent = '*';
+                label.appendChild(requiredSpan);
+            }
+            
+            fieldContainer.appendChild(label);
+            
+            let input;
+            if (field.type === 'textarea') {
+                input = document.createElement('textarea');
+                input.rows = 5;
+                input.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500';
+            } else {
+                input = document.createElement('input');
+                if (field.type === 'date') {
+                    input.type = 'date';
+                } else {
+                    input.type = 'text';
+                }
+                input.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500';
+            }
             
             input.name = 'var_' + name;
-            input.placeholder = field.label;
-            if (field.type === 'date') {
-                input.type = 'date';
-            } else if (field.type === 'text') {
-                input.type = 'text';
-            }
+            input.id = 'var_' + name;
+            input.placeholder = field.label || name.replace('_', ' ').title();
+            
             if (field.required) {
                 input.required = true;
             }
             
-            wrapper.appendChild(label);
-            wrapper.appendChild(input);
-            return wrapper;
+            fieldContainer.appendChild(input);
+            return fieldContainer;
         }
 
         // Function to parse template content and insert editable fields
         function parseTemplateContent() {
-            let content = templateData.content;
-            const variables = templateData.variables;
-
-            // First, convert newlines to <br> tags
-            content = content.replace(/\n/g, '<br>');
-
-            // Replace all variable placeholders with editable fields
-            Object.entries(variables).forEach(([name, field]) => {
-                const placeholder = '{{' + name + '}}';
-                // Escape special regex characters in the placeholder
-                const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const regex = new RegExp(escapedPlaceholder, 'g');
-                content = content.replace(regex, function() {
-                    const editableField = createEditableField(name, field);
-                    return editableField.outerHTML;
-                });
-            });
-
-            // Update the document body with the parsed content
-            document.getElementById('document-body').innerHTML = content;
+            debugLog('Parsing template content');
             
-            // Initialize event listeners for the new fields
-            initializeEventListeners();
-        }
-
-        function initializeEventListeners() {
-            const form = document.getElementById('document-form');
-            const inputs = form.querySelectorAll('input, textarea');
-            inputs.forEach(input => {
-                input.addEventListener('input', updatePreview);
-                input.addEventListener('change', updatePreview);
-            });
-        }
-
-        function updatePreview() {
-            // This function can be used for real-time validation or updates
-            // For now, we'll leave it empty as the content is edited in-place
-        }
-
-        function saveDocument() {
-            const form = document.getElementById('document-form');
-            const formData = new FormData(form);
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-
-            fetch('/save-document/' + documentId + '/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                showNotification('Document saved successfully', 'success');
-            })
-            .catch(error => {
-                showNotification('Error saving document', 'error');
-            });
-        }
-
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            const className = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-            notification.className = 'fixed bottom-4 right-4 p-4 rounded-lg text-white ' + className;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
-        }
-
-        function exportDocument(format) {
-            fetch('/export-document/' + documentId + '/?format=' + format, {
-                method: 'GET',
-                headers: {
-                    'X-CSRFToken': csrfToken
+            // Clear existing content
+            documentBody.innerHTML = '';
+            
+            // Add title field
+            const titleSection = document.createElement('div');
+            titleSection.className = 'bg-white shadow overflow-hidden sm:rounded-lg mb-6';
+            
+            const titleHeader = document.createElement('div');
+            titleHeader.className = 'px-4 py-5 sm:px-6 bg-gray-50';
+            
+            const titleHeading = document.createElement('h3');
+            titleHeading.className = 'text-lg leading-6 font-medium text-gray-900';
+            titleHeading.textContent = 'Document Information';
+            
+            titleHeader.appendChild(titleHeading);
+            titleSection.appendChild(titleHeader);
+            
+            const titleContent = document.createElement('div');
+            titleContent.className = 'border-t border-gray-200 px-4 py-5 sm:p-6';
+            
+            const titleFieldContainer = document.createElement('div');
+            titleFieldContainer.className = 'mb-4';
+            
+            const titleLabel = document.createElement('label');
+            titleLabel.setAttribute('for', 'document_title');
+            titleLabel.className = 'block text-sm font-medium text-gray-700 mb-1';
+            titleLabel.textContent = 'Document Title';
+            
+            const requiredSpan = document.createElement('span');
+            requiredSpan.className = 'text-red-500 ml-1';
+            requiredSpan.textContent = '*';
+            titleLabel.appendChild(requiredSpan);
+            
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.name = 'document_title';
+            titleInput.id = 'document_title';
+            titleInput.className = 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500';
+            titleInput.value = templateData.title || '';
+            titleInput.required = true;
+            
+            titleFieldContainer.appendChild(titleLabel);
+            titleFieldContainer.appendChild(titleInput);
+            titleContent.appendChild(titleFieldContainer);
+            titleSection.appendChild(titleContent);
+            
+            documentBody.appendChild(titleSection);
+            
+            // Add variable fields
+            if (templateData.variables && Object.keys(templateData.variables).length > 0) {
+                debugLog('Processing variables', templateData.variables);
+                
+                const variablesSection = document.createElement('div');
+                variablesSection.className = 'bg-white shadow overflow-hidden sm:rounded-lg mb-6';
+                
+                const variablesHeader = document.createElement('div');
+                variablesHeader.className = 'px-4 py-5 sm:px-6 bg-gray-50';
+                
+                const variablesHeading = document.createElement('h3');
+                variablesHeading.className = 'text-lg leading-6 font-medium text-gray-900';
+                variablesHeading.textContent = 'Template Variables';
+                
+                variablesHeader.appendChild(variablesHeading);
+                variablesSection.appendChild(variablesHeader);
+                
+                const variablesContent = document.createElement('div');
+                variablesContent.className = 'border-t border-gray-200 px-4 py-5 sm:p-6';
+                
+                for (const [name, field] of Object.entries(templateData.variables)) {
+                    const fieldElement = createEditableField(name, field);
+                    variablesContent.appendChild(fieldElement);
                 }
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'document.' + format;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.getElementById('export-modal').classList.add('hidden');
-            })
-            .catch(error => {
-                showNotification('Error exporting document', 'error');
-            });
-        }
-
-        function closeExportModal() {
-            document.getElementById('export-modal').classList.add('hidden');
+                
+                variablesSection.appendChild(variablesContent);
+                documentBody.appendChild(variablesSection);
+            } else {
+                debugLog('No variables found in template data');
+            }
+            
+            // Add preview section
+            const previewSection = document.createElement('div');
+            previewSection.className = 'bg-white shadow overflow-hidden sm:rounded-lg mb-6';
+            
+            const previewHeader = document.createElement('div');
+            previewHeader.className = 'px-4 py-5 sm:px-6 bg-gray-50';
+            
+            const previewHeading = document.createElement('h3');
+            previewHeading.className = 'text-lg leading-6 font-medium text-gray-900';
+            previewHeading.textContent = 'Document Preview';
+            
+            previewHeader.appendChild(previewHeading);
+            previewSection.appendChild(previewHeader);
+            
+            const previewContent = document.createElement('div');
+            previewContent.className = 'border-t border-gray-200 px-4 py-5 sm:p-6';
+            
+            const previewText = document.createElement('div');
+            previewText.id = 'document-preview';
+            previewText.className = 'prose max-w-none';
+            
+            // Convert markdown to HTML
+            let contentHtml = templateData.content || '';
+            contentHtml = contentHtml.replace(/\n/g, '<br>');
+            contentHtml = contentHtml.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            contentHtml = contentHtml.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            contentHtml = contentHtml.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            
+            previewText.innerHTML = contentHtml;
+            
+            previewContent.appendChild(previewText);
+            previewSection.appendChild(previewContent);
+            documentBody.appendChild(previewSection);
+            
+            debugLog('Template content parsed and rendered');
         }
 
         // Initialize the template parser
         parseTemplateContent();
         
+        // Add event listeners for form submission
+        const form = document.getElementById('document-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveDocument();
+            });
+            debugLog('Form submission listener added');
+        } else {
+            debugLog('Form element not found');
+        }
+        
+        // Function to save the document
+        function saveDocument() {
+            debugLog('Saving document');
+            const formData = new FormData(document.getElementById('document-form'));
+            
+            fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Document saved successfully', 'success');
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                    }
+                } else {
+                    showNotification('Error saving document: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error saving document: ' + error, 'error');
+            });
+        }
+        
+        // Function to show notification
+        function showNotification(message, type) {
+            // Implementation of notification display
+            alert(message);
+        }
+        
+        // Function to export document
+        function exportDocument(format) {
+            // Implementation of document export
+            alert('Export as ' + format + ' not implemented yet');
+            closeExportModal();
+        }
+        
+        // Function to close export modal
+        function closeExportModal() {
+            document.getElementById('export-modal').classList.add('hidden');
+        }
+        
     } catch (error) {
-        console.error('Error initializing document editor:', error);
-        document.getElementById('document-body').innerHTML = '<div class="text-red-500">Error loading document template. Please try again.</div>';
+        debugLog('Error initializing template editor', error.message);
+        console.error('Error initializing template editor:', error);
     }
 })();
 </script>

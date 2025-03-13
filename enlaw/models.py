@@ -23,7 +23,12 @@ class Template(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     is_public = models.BooleanField(default=False)
-
+    
+    # Fields to replace FormModel functionality
+    form_template = models.CharField(max_length=255, default='default_form.html')
+    success_url = models.CharField(max_length=255, blank=True)
+    success_message = models.CharField(max_length=255, blank=True, default="Form submitted successfully")
+    
     def __str__(self):
         return self.title
 
@@ -39,6 +44,31 @@ class Template(models.Model):
                 if not re.match(var.validation_regex, value):
                     errors[var.name] = "Invalid format"
         return errors
+
+    def get_form_fields(self):
+        """Return form fields based on template variables"""
+        fields = {}
+        for var in self.variables.all():
+            field_type = 'CharField'  # Default field type
+            field_attrs = {
+                'label': var.name,
+                'help_text': var.description,
+                'required': var.required,
+            }
+            
+            if var.default_value:
+                field_attrs['initial'] = var.default_value
+                
+            if var.validation_regex:
+                field_attrs['validators'] = [
+                    lambda value, regex=var.validation_regex: (
+                        None if __import__('re').match(regex, value) 
+                        else ValidationError('Invalid format')
+                    )
+                ]
+                
+            fields[var.name] = (field_type, field_attrs)
+        return fields
 
 class Document(models.Model):
     STATUS_CHOICES = [

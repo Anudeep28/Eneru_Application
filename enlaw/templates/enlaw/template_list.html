@@ -5,16 +5,22 @@
 <div class="container mx-auto px-4 py-8">
     <!-- Search and Filter Section -->
     <div class="mb-8">
-        <div class="flex space-x-4">
-            <input type="text" id="search" placeholder="Search templates..." 
-                   class="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-            <select id="category-filter" class="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">All Categories</option>
-                {% for category in categories %}
-                    <option value="{{ category }}">{{ category }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        <form method="get" action="{% url 'enlaw:template_list' %}">
+            <div class="flex space-x-4">
+                <input type="text" id="search" name="search" placeholder="Search templates..." 
+                       value="{{ search_query }}"
+                       class="flex-1 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                <select id="category-filter" name="category" class="p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ category }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                    Filter
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Template Grid -->
@@ -29,10 +35,27 @@
                             class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
                         Preview
                     </button>
-                    <a href="{% if template.path and template.path|length > 0 %}{% url 'enlaw:edit_static_template' template.path %}{% elif template.id and template.id|length > 0 %}{% url 'enlaw:edit_document' template.id %}{% else %}#{% endif %}" 
-                       class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-                        Use Template
-                    </a>
+                    <div class="flex space-x-2">
+                        {% if template.is_db_template %}
+                        <a href="{% url 'enlaw:edit_document' template.id %}" 
+                           class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            Standard Edit
+                        </a>
+                        <a href="{% url 'enlaw:dynamic_form_edit' template.id %}" 
+                           class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                            Dynamic Edit
+                        </a>
+                        {% else %}
+                        <a href="{% url 'enlaw:edit_static_template' template.path %}" 
+                           class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            Standard Edit
+                        </a>
+                        <a href="{% url 'enlaw:simple_form_edit' template.path %}" 
+                           class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                            Simple Form
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -75,27 +98,9 @@ function closePreview() {
     document.getElementById('preview-modal').classList.add('hidden');
 }
 
-// Search and filter functionality
-document.getElementById('search').addEventListener('input', debounce(filterTemplates, 300));
-document.getElementById('category-filter').addEventListener('change', filterTemplates);
-
-function filterTemplates() {
-    const searchQuery = document.getElementById('search').value;
-    const category = document.getElementById('category-filter').value;
-    
-    window.location.href = `?search=${searchQuery}&category=${category}`;
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+// Submit form on category change
+document.getElementById('category-filter').addEventListener('change', function() {
+    this.form.submit();
+});
 </script>
 {% endblock %}

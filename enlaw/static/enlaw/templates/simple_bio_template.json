@@ -1,0 +1,33 @@
+{
+  "title": "Simple Bio Form",
+  "subtitle": "Basic Personal Information Form",
+  "category": "Personal",
+  "content": "# Personal Information Form\n\nName: {{name}}\n\nDate of Birth: {{date_of_birth}}\n\n## Biography\n\n{{bio}}\n\n## Additional Information\n\nPhone: {{phone}}\n\nEmail: {{email}}",
+  "variables": {
+    "name": {
+      "label": "Full Name",
+      "type": "text",
+      "required": true
+    },
+    "date_of_birth": {
+      "label": "Date of Birth",
+      "type": "date",
+      "required": true
+    },
+    "bio": {
+      "label": "Biography",
+      "type": "textarea",
+      "required": true
+    },
+    "phone": {
+      "label": "Phone Number",
+      "type": "text",
+      "required": false
+    },
+    "email": {
+      "label": "Email Address",
+      "type": "text",
+      "required": false
+    }
+  }
+}
