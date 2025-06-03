@@ -28,110 +28,8 @@
                 <!-- Legal Document with Editable Fields -->
                 <div class="mt-8">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Legal Document</h3>
-                    <div class="bg-gray-50 p-6 rounded-md border border-gray-200 legal-document">
-                        <div class="text-center mb-6">
-                            <p class="font-bold">IN THE COURT OF THE CHIEF JUDICIAL MAGISTRATE AT [COURT_LOCATION]</p>
-                            <p>Criminal Complaint No. _______ of [YEAR]</p>
-                        </div>
-                        
-                        <p class="font-bold mb-4">IN THE MATTER OF:</p>
-                        
-                        <div class="mb-4">
-                            <div class="mb-2">
-                                <label for="complainant_name" class="block text-sm font-medium text-gray-700">Complainant Name:</label>
-                                <input type="text" id="complainant_name" name="var_complainant_name" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                            <div>
-                                <label for="complainant_address" class="block text-sm font-medium text-gray-700">Complainant Address:</label>
-                                <textarea id="complainant_address" name="var_complainant_address" rows="2"
-                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                            </div>
-                            <p class="text-right font-bold mt-1">...COMPLAINANT</p>
-                        </div>
-                        
-                        <p class="text-center font-bold my-4">VERSUS</p>
-                        
-                        <div class="mb-4">
-                            <div class="mb-2">
-                                <label for="accused_name" class="block text-sm font-medium text-gray-700">Accused Name:</label>
-                                <input type="text" id="accused_name" name="var_accused_name" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                            </div>
-                            <div>
-                                <label for="accused_address" class="block text-sm font-medium text-gray-700">Accused Address:</label>
-                                <textarea id="accused_address" name="var_accused_address" rows="2"
-                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                            </div>
-                            <p class="text-right font-bold mt-1">...ACCUSED</p>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <p class="font-bold mb-2">COMPLAINT UNDER SECTION 
-                                <input type="text" id="applicable_sections" name="var_applicable_sections" 
-                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                            OF THE INDIAN PENAL CODE</p>
-                        </div>
-                        
-                        <p class="font-bold mb-4">MOST RESPECTFULLY SHOWETH:</p>
-                        
-                        <ol class="list-decimal pl-6 space-y-4">
-                            <li>That the Complainant is a law-abiding citizen of India, residing at the above-mentioned address.</li>
-                            
-                            <li>That the accused is also residing at the above-mentioned address.</li>
-                            
-                            <li>That on 
-                                <input type="date" id="incident_date" name="var_incident_date" 
-                                       class="inline-block w-auto px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">, 
-                                at 
-                                <input type="text" id="incident_place" name="var_incident_place" 
-                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">, 
-                                the following incident occurred:
-                                <div class="mt-2">
-                                    <textarea id="incident_description" name="var_incident_description" rows="5"
-                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                                </div>
-                            </li>
-                            
-                            <li>That the above-mentioned acts of the accused constitute offence(s) under Section 
-                                <input type="text" id="applicable_sections_repeat" name="var_applicable_sections_repeat" 
-                                       class="inline-block w-64 px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                of the Indian Penal Code.
-                            </li>
-                            
-                            <li>That this Hon'ble Court has jurisdiction to try and entertain this complaint.</li>
-                        </ol>
-                        
-                        <div class="mt-6">
-                            <p class="font-bold mb-2">PRAYER:</p>
-                            <p class="mb-4">It is, therefore, most respectfully prayed that this Hon'ble Court may be pleased to:</p>
-                            
-                            <ol class="list-[lower-alpha] pl-6 space-y-2">
-                                <li>Take cognizance of this complaint and proceed against the accused for the offence(s) mentioned above;</li>
-                                <li>Pass any other order which this Hon'ble Court may deem fit and proper in the interest of justice.</li>
-                            </ol>
-                        </div>
-                        
-                        <div class="mt-6 grid grid-cols-2">
-                            <div>
-                                <p>Place: [LOCATION]</p>
-                                <p>Date: [CURRENT_DATE]</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="mb-1">COMPLAINANT</p>
-                                <p id="complainant_name_display"></p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-8 border-t pt-4">
-                            <p class="font-bold mb-2">VERIFICATION:</p>
-                            <p class="mb-4">Verified at [LOCATION] on this [DATE] that the contents of the above complaint are true and correct to the best of my knowledge and belief.</p>
-                            
-                            <div class="text-right">
-                                <p class="mb-1">COMPLAINANT</p>
-                                <p id="complainant_name_verify_display"></p>
-                            </div>
-                        </div>
+                    <div class="bg-gray-50 p-6 rounded-md border border-gray-200 legal-document" id="document-container">
+                        <!-- Document content will be rendered here dynamically -->
                     </div>
                 </div>
                 
@@ -149,20 +47,125 @@
 
 {% block extra_js %}
 <script>
-    // Auto-fill repeated fields
     document.addEventListener('DOMContentLoaded', function() {
-        const complainantNameInput = document.getElementById('complainant_name');
-        const applicableSectionsInput = document.getElementById('applicable_sections');
+        // Get the document content from the template
+        const documentContent = "{{ template.content|escapejs }}";
+        const documentContainer = document.getElementById('document-container');
         
-        // Update complainant name displays
-        complainantNameInput.addEventListener('input', function() {
-            document.getElementById('complainant_name_display').textContent = this.value;
-            document.getElementById('complainant_name_verify_display').textContent = this.value;
-        });
+        // Function to parse the document content and identify placeholders
+        function renderDocumentWithInputs(content) {
+            // Regular expression to find all placeholders {{variable_name}}
+            const placeholderRegex = /\{\{([^}]+)\}\}/g;
+            
+            // Keep track of found variables to avoid duplicate input fields
+            const foundVariables = new Set();
+            
+            // Replace each placeholder with an input field
+            let lastIndex = 0;
+            let result = '';
+            let match;
+            
+            while ((match = placeholderRegex.exec(content)) !== null) {
+                // Add text before the placeholder
+                result += content.substring(lastIndex, match.index);
+                
+                // Extract variable name
+                const variableName = match[1].trim();
+                
+                // Create a unique ID for the input field
+                const inputId = "var_" + variableName;
+                
+                // Determine input type based on variable name
+                let inputHtml = '';
+                
+                if (foundVariables.has(variableName)) {
+                    // For repeated variables, just add a span that will be updated
+                    inputHtml = '<span class="var-display" data-var-name="' + variableName + '">{{' + variableName + '}}</span>';
+                } else {
+                    foundVariables.add(variableName);
+                    
+                    // Create appropriate input based on variable name
+                    if (variableName.toLowerCase().includes('date')) {
+                        // Date input for date fields
+                        inputHtml = 
+                            '<div class="inline-input-container">' +
+                                '<input type="date" id="' + inputId + '" name="' + inputId + '"' +
+                                       ' class="inline-block w-auto px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">' +
+                            '</div>';
+                    } else if (variableName.toLowerCase().includes('address') || 
+                               variableName.toLowerCase().includes('description')) {
+                        // Textarea for longer text fields
+                        inputHtml = 
+                            '<div class="my-2">' +
+                                '<label for="' + inputId + '" class="block text-sm font-medium text-gray-700">' + formatLabel(variableName) + ':</label>' +
+                                '<textarea id="' + inputId + '" name="' + inputId + '" rows="3"' +
+                                         ' class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>' +
+                            '</div>';
+                    } else {
+                        // Default to text input for other fields
+                        inputHtml = 
+                            '<div class="inline-input-container">' +
+                                '<input type="text" id="' + inputId + '" name="' + inputId + '"' +
+                                       ' class="inline-block px-2 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"' +
+                                       ' placeholder="' + formatLabel(variableName) + '">' +
+                            '</div>';
+                    }
+                }
+                
+                // Add the input field to the result
+                result += inputHtml;
+                
+                // Update last index
+                lastIndex = match.index + match[0].length;
+            }
+            
+            // Add any remaining text
+            result += content.substring(lastIndex);
+            
+            // Format the document with proper line breaks and styling
+            result = formatDocumentContent(result);
+            
+            return result;
+        }
         
-        // Copy applicable sections to repeated field
-        applicableSectionsInput.addEventListener('input', function() {
-            document.getElementById('applicable_sections_repeat').value = this.value;
+        // Format variable names into readable labels
+        function formatLabel(variableName) {
+            return variableName
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        }
+        
+        // Format document content with proper styling
+        function formatDocumentContent(content) {
+            // Replace newlines with line breaks
+            content = content.replace(/\n/g, '<br>');
+            
+            // Add proper formatting for headings and sections
+            content = content.replace(/^([A-Z][A-Z\s]+):/gm, '<p class="font-bold mt-4 mb-2">$1:</p>');
+            
+            // Format lists (numbered points)
+            content = content.replace(/(\d+)\.\s+([^\n]+)/g, '<div class="ml-4 mb-2"><span class="font-medium">$1.</span> $2</div>');
+            
+            return content;
+        }
+        
+        // Render the document
+        documentContainer.innerHTML = renderDocumentWithInputs(documentContent);
+        
+        // Add event listeners to update all instances of the same variable
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(function(input) {
+            if (input.name.startsWith('var_')) {
+                const varName = input.name.substring(4);
+                
+                input.addEventListener('input', function() {
+                    // Update all display spans for this variable
+                    const displays = document.querySelectorAll('.var-display[data-var-name="' + varName + '"]');
+                    displays.forEach(function(display) {
+                        display.textContent = input.value || ('{{' + varName + '}}');
+                    });
+                });
+            }
         });
     });
 </script>
